@@ -3,10 +3,10 @@
   const root = document.documentElement, en = root.lang === 'en';
   const T = en ? {
     download: os => 'Download for ' + os, meta: v => 'Desktop ' + v + ' · prebuilt, ready to install',
-    source: tag => 'Links follow the latest release ' + tag + '. Desktop, server source and Gadget are versioned independently.'
+    source: tag => 'Desktop release: ' + tag + '. Server source and Gadget are versioned independently.'
   } : {
     download: os => '下载 ' + os + ' 版', meta: v => '桌面端 ' + v + ' · 已编译，下载即可安装',
-    source: tag => '当前链接来自最新发布 ' + tag + '；桌面端、服务端源码与 Gadget 各自独立版本。'
+    source: tag => '桌面端发布：' + tag + '；服务端源码与 Gadget 各自独立版本。'
   };
 
   // Theme: follow the system; the button pins the opposite choice for this visitor.
@@ -49,9 +49,17 @@
       const assets = release.assets || [];
       for (const [kind, re] of Object.entries(patterns)) {
         const asset = assets.find(a => re.test(a.name)); if (!asset) continue;
-        for (const a of document.querySelectorAll(`a[data-asset="${kind}"]`)) a.href = asset.browser_download_url;
         const group = kind === 'server' || kind === 'gadget' ? kind : ['dmg', 'exe', 'deb'].includes(kind) ? 'desktop' : null;
         const v = group && versionOf[group](asset.name);
+        const current = group && document.querySelector(`[data-ver="${group}"]`)?.textContent;
+        // A server-only correction can be newer than the latest desktop release.
+        // Never replace its curated download with an older carried-over asset.
+        if (v && current) {
+          const old = current.trim().split('.').map(Number);
+          const comparison = v.split('.').map(Number).reduce((value, n, i) => value || n - old[i], 0);
+          if (comparison < 0) continue;
+        }
+        for (const a of document.querySelectorAll(`a[data-asset="${kind}"]`)) a.href = asset.browser_download_url;
         if (v) for (const cell of document.querySelectorAll(`[data-ver="${group}"]`)) cell.textContent = v;
       }
       const desktop = document.querySelector('[data-ver="desktop"]')?.textContent;
