@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kinora</title>
+<meta name="description" content="Kinora brings motion generation, a motion library, robot retargeting and refinement into one workspace. The desktop client connects to your team's server; Gadget brings the same workflow to your agents.">
+<meta property="og:title" content="Kinora">
+<meta property="og:description" content="From a motion idea to robot motion you can review, edit and export.">
+<meta property="og:image" content="https://poirotjin.github.io/kinora/assets/library-en.webp">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f0e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="../assets/kinora-icon.png">
+<link rel="alternate" hreflang="zh-CN" href="https://poirotjin.github.io/kinora/">
+<link rel="alternate" hreflang="en" href="https://poirotjin.github.io/kinora/en/">
+<link rel="alternate" hreflang="x-default" href="https://poirotjin.github.io/kinora/">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Kinora home"><img class="mark" src="../assets/kinora-mark.png" alt="" width="26" height="26">kinora</a>
+    <nav class="nav" aria-label="Page"><a href="#workflow">Workflow</a><a href="#features">Features</a><a href="#start">Get started</a><a href="#download">Download</a><a href="https://github.com/PoirotJin/kinora">GitHub</a></nav>
+    <button class="theme" id="theme" type="button" aria-label="Switch light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+    <span class="lang" aria-label="Language"><a href="../" hreflang="zh-CN" lang="zh-CN">中文</a><span class="sep">/</span><span aria-current="true">EN</span></span>
+    <a class="btn sm primary" href="#download">Download</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <p class="caps">Generation · Library · Retargeting · Refinement · Agent tools</p>
+      <h1>From a motion idea to robot motion you can review, edit and export.</h1>
+      <p class="lede">Kinora brings motion generation, search, preview, retargeting and refinement into one workspace. The desktop client connects to your team's server, which does the generation, editing and retargeting work, so the features available depend on that server's configuration and your account. Gadget's command line and MCP tools bring the same workflow to the agents you already use.</p>
+      <p class="chips"><span>macOS</span><span>Windows</span><span>Linux</span><span>Self-hosted server</span><span>CLI / MCP</span></p>
+      <div class="cta">
+        <a class="btn primary" id="hero-download" href="#download">Download the desktop app</a>
+        <a class="btn" href="https://github.com/PoirotJin/kinora">View on GitHub</a>
+        <span class="meta" id="hero-meta">Desktop 0.5.1 · prebuilt, ready to install</span>
+      </div>
+      <figure class="shot" style="margin-left:0;margin-right:0">
+        <img src="../assets/library-en.webp" width="1920" height="1147" alt="Kinora desktop library: motion list with thumbnails on the left, a 3D skeleton preview with the root trail in the middle, review, direction and quality details on the right">
+      </figure>
+      <p class="shot-cap"><span>Library: search by description or ID, preview the skeleton in 3D, and read review and quality details side by side.</span><span>Illustrative UI · demo data</span></p>
+    </div>
+  </section>
+
+  <section class="block" id="workflow">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">Workflow</span><h2>One motion, from description to delivery</h2></div>
+      <ol class="flow">
+        <li><i>01</i><b>Generate</b><p>Describe a single-person motion in a sentence. The server rewrites the prompt, or you submit the English text as is; jobs show their queue position and progress.</p></li>
+        <li><i>02</i><b>Search &amp; review</b><p>IDs, keywords and cross-language semantic search share one box. Preview each skeleton and see human review, machine scores and quality flags.</p></li>
+        <li><i>03</i><b>Edit &amp; splice</b><p>Select a segment on the timeline and describe the change, or join two clips and let the generator create a natural transition.</p></li>
+        <li><i>04</i><b>Retarget &amp; refine</b><p>Solve the motion for a target robot and play it on the real model. At problem frames, adjust joints, parts and keyframes, then solve and check again.</p></li>
+        <li><i>05</i><b>Export &amp; connect</b><p>Download NPZ or BVH, or a batch ZIP with an export report. Agents can call the same capabilities through Gadget.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">Features</span><h2>Built for review and revision</h2></div>
+
+      <div class="feature">
+        <div class="text">
+          <p class="caps">Editing</p>
+          <h3>Work on motion like video</h3>
+          <p>A bin, a monitor and a timeline form an editing-style layout. Trim in and out points, move and rotate whole clips in the top view, and check the distance and turn between two clips.</p>
+          <ul>
+            <li>Two-clip splice: only the transition is regenerated; the frames of both clips stay unchanged</li>
+            <li>Segment repair: select 12–300 frames on a pose-strip timeline and describe the change</li>
+            <li>The source motion is always kept; candidates are compared and accepted explicitly</li>
+          </ul>
+        </div>
+        <figure><img src="../assets/editor-en.webp" width="1920" height="1147" loading="lazy" alt="Kinora editor: clip bin and inspector on the left, 3D monitor on the right, and a timeline with two clips and a transition at the bottom"></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <p class="caps">Robot refinement</p>
+          <h3>Fix it at the frame where it fails</h3>
+          <p>Refinement uses the job's actual robot model. The timeline marks collisions, limit violations, foot slides and other issues by frame; click one to jump there, adjust step by step, and submit for solving.</p>
+          <ul>
+            <li>Joint sliders update the robot pose live, with the original version as an overlay</li>
+            <li>Drag hand and foot targets or type offsets; poses blend smoothly between keyframes</li>
+            <li>Candidates are checked for velocity, acceleration, seam jumps, collisions and joint limits; failing ones cannot be exported</li>
+          </ul>
+          <p style="margin:14px 0 0;font-size:12.5px;color:var(--ink-3)">Automatic checks are not a safety certification. Validate motions with your robot, controller and environment.</p>
+        </div>
+        <figure><img src="../assets/refine-en.webp" width="1920" height="1211" loading="lazy" alt="Kinora robot refinement: robot preview and a timeline with issue marks on the left, numbered steps for range, joints, parts and keyframes on the right"></figure>
+      </div>
+
+      <div class="grid3">
+        <div><h4>Many robots</h4><p>Built-in robot retargeting with mesh previews. Import URDF, MuJoCo XML or a ZIP with assets, stored per account, and inspect joint limits.</p></div>
+        <div><h4>Traceable exports</h4><p>NPZ keeps the human source data; BVH exports skeletal animation. Multiple motions are packed into a ZIP with a per-item export report, so failures are never silently dropped.</p></div>
+        <div><h4>Teams &amp; self-hosting</h4><p>Password and email accounts, admin tools and Gadget keys. Run the server on your own machines and keep data and backups in your hands.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="start">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">Get started</span><h2>Choose how to begin</h2></div>
+      <div class="paths">
+        <div class="path">
+          <p class="caps">Desktop</p>
+          <h3>Connect to your team</h3>
+          <ol><li>Download and install the package for your system.</li><li>Enter the Kinora server address from your team and sign in with your own account.</li><li>Search and preview in the library, then generate, retarget or refine.</li></ol>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">The client ships without accounts, models or local GPU inference. Generation, editing and retargeting depend on the connected server's configuration and your permissions.</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md">Install &amp; update guide (Chinese) →</a>
+        </div>
+        <div class="path">
+          <p class="caps">Server</p>
+          <h3>Host your own server</h3>
+          <pre><code>python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python scripts/seed_demo.py --root runtime/demo
+bash commands/kinora-server.sh doctor --full</code></pre>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">The local demo needs only a CPU and lets you check sign-in, the library and previews. Full generation, editing and refinement need the assets, Kimodo and licensed models from the deployment guide, verified with <code>doctor --full</code>.</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/SERVER.md">Server guide (Chinese) →</a>
+        </div>
+        <div class="path">
+          <p class="caps">Agents</p>
+          <h3>Let your agent use Kinora</h3>
+          <pre><code>export MOTIONFARM_URL="https://your-kinora.example.com"
+export MOTIONFARM_API_KEY_FILE="$HOME/.config/kinora/api-key.txt"
+python3 motionfarm-gadget/motionfarm.py info</code></pre>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">Run it as a CLI, or as a local MCP subprocess for Codex or Cursor. Planning stays with the agent you already use.</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/GADGET.md">Gadget guide (Chinese) →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="download">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">Download</span><h2>Prebuilt and ready to install</h2></div>
+      <table class="dl">
+        <thead><tr><th>Download</th><th>Version</th><th>Platform</th><th></th></tr></thead>
+        <tbody>
+          <tr data-os="mac"><td><span class="name">macOS</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Apple silicon and Intel, universal DMG</td><td><a class="btn sm" data-asset="dmg" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_universal.dmg">Get DMG</a></td></tr>
+          <tr data-os="win"><td><span class="name">Windows</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Windows 10 / 11, x86_64 installer</td><td><a class="btn sm" data-asset="exe" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_x64-setup.exe">Get EXE</a></td></tr>
+          <tr data-os="linux"><td><span class="name">Linux</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Ubuntu 22.04+ / Debian 12+, x86_64</td><td><a class="btn sm" data-asset="deb" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_amd64.deb">Get DEB</a></td></tr>
+          <tr><td><span class="name">Server source</span></td><td class="ver" data-ver="server">0.5.1</td><td class="env">The full server, independent human rig and compute queue, with Gadget 0.15.2; model weights, GPU environment and robot assets are installed separately</td><td><a class="btn sm" data-asset="server" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-server-0.5.1.zip">Get ZIP</a></td></tr>
+          <tr><td><span class="name">Gadget</span></td><td class="ver" data-ver="gadget">0.15.2</td><td class="env">Python 3.10+, CLI / MCP</td><td><a class="btn sm" data-asset="gadget" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-gadget-0.15.2.zip">Get ZIP</a></td></tr>
+        </tbody>
+      </table>
+      <p class="dl-meta"><a data-asset="sums" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt">SHA-256 checksums</a><a href="https://github.com/PoirotJin/kinora/releases">All releases</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/VERSIONS.md">Versions &amp; compatibility</a><span id="release-src">Desktop, server source and Gadget are versioned independently.</span></p>
+      <p class="license-line">Kinora’s own code is licensed under the <a href="https://github.com/PoirotJin/kinora/blob/main/LICENSE">Apache License 2.0</a>. Third-party components, models and assets keep their own licenses; see <a href="https://github.com/PoirotJin/kinora/blob/main/NOTICE">NOTICE</a>.</p>
+
+      <div class="verify">
+        <div><h4>MACOS</h4><p>Open the DMG and drag Kinora to Applications. The first time, right-click the app and choose Open.</p><p><code>shasum -a 256 file.dmg</code></p></div>
+        <div><h4>WINDOWS</h4><p>Run the installer. Unsigned installers may trigger SmartScreen; continue only after checking the source and checksum.</p><p><code>Get-FileHash .\file.exe -Algorithm SHA256</code></p></div>
+        <div><h4>LINUX</h4><p>Install from the download folder with the package manager, which resolves dependencies.</p><p><code>sudo apt install ./file.deb</code></p></div>
+      </div>
+
+      <p class="note"><strong>The installers are not yet notarized for macOS or code-signed for Windows.</strong> Download them from this page or GitHub Releases and verify the SHA-256 checksum; if you see an integrity error, do not turn off your system's security protections. Existing users can upgrade in the app under Settings → Check for updates; in-app updates depend on how the connected server is configured.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img class="mark" src="../assets/kinora-mark.png" alt="" width="22" height="22" style="width:22px;height:22px">kinora</a>
+    <span>Generate, review, retarget and refine motion</span>
+    <nav aria-label="Footer"><a href="https://github.com/PoirotJin/kinora">GitHub</a><a href="https://github.com/PoirotJin/kinora/releases">Releases</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md">Install</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/SERVER.md">Server</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/GADGET.md">Gadget</a><a href="https://github.com/PoirotJin/kinora/blob/main/LICENSE">Apache-2.0</a><a href="../fonts/EB-Garamond-OFL.txt">Font license</a></nav>
+  </div>
+</footer>
+<script src="../assets/site.js" defer></script>
+</body>
+</html>

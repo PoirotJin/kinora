@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kinora</title>
+<meta name="description" content="Kinora：动作生成、动作库、机器人重定向与精修的一体化工作空间。桌面客户端连接团队服务器，也可通过 Gadget 接入 Agent。">
+<meta property="og:title" content="Kinora">
+<meta property="og:description" content="从动作灵感，到可审阅、可编辑、可导出的机器人动作。">
+<meta property="og:image" content="https://poirotjin.github.io/kinora/assets/library.webp">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f0e" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/png" href="assets/kinora-icon.png">
+<link rel="alternate" hreflang="zh-CN" href="https://poirotjin.github.io/kinora/">
+<link rel="alternate" hreflang="en" href="https://poirotjin.github.io/kinora/en/">
+<link rel="alternate" hreflang="x-default" href="https://poirotjin.github.io/kinora/">
+<link rel="stylesheet" href="assets/site.css">
+<script>
+// First visit from a browser with no Chinese preference: offer the English page.
+try { if (!localStorage.getItem('kinora-lang') && !(navigator.languages || [navigator.language]).some(l => /^zh/i.test(l))) location.replace('en/'); } catch (_) {}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Kinora 首页"><img class="mark" src="assets/kinora-mark.png" alt="" width="26" height="26">kinora</a>
+    <nav class="nav" aria-label="页面导航"><a href="#workflow">工作流</a><a href="#features">功能</a><a href="#start">开始使用</a><a href="#download">下载</a><a href="https://github.com/PoirotJin/kinora">GitHub</a></nav>
+    <button class="theme" id="theme" type="button" aria-label="切换浅色 / 深色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg></button>
+    <span class="lang" aria-label="语言"><span aria-current="true" lang="zh-CN">中文</span><span class="sep">/</span><a href="en/" hreflang="en" lang="en">EN</a></span>
+    <a class="btn sm primary" href="#download">下载</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <p class="caps">动作生成 · 动作库 · 机器人重定向 · 精修 · Agent 工具</p>
+      <h1>从动作灵感，到可审阅、可编辑、可导出的机器人动作。</h1>
+      <p class="lede">Kinora 把动作生成、检索、预览、重定向和精修放在同一个工作空间。桌面客户端连接团队服务器，生成、编辑与重定向由服务端计算，可用功能取决于所连接服务器的配置与账号权限；也可以通过 Gadget 的命令行与 MCP 工具，把动作工作流接入已有的 Agent。</p>
+      <p class="chips"><span>macOS</span><span>Windows</span><span>Linux</span><span>自托管服务端</span><span>CLI / MCP</span></p>
+      <div class="cta">
+        <a class="btn primary" id="hero-download" href="#download">下载桌面端</a>
+        <a class="btn" href="https://github.com/PoirotJin/kinora">在 GitHub 查看</a>
+        <span class="meta" id="hero-meta">桌面端 0.5.1 · 已编译，下载即可安装</span>
+      </div>
+      <figure class="shot" style="margin-left:0;margin-right:0">
+        <img src="assets/library.webp" width="1920" height="1147" alt="Kinora 桌面端动作库：左侧动作列表与缩略图，中间三维骨架预览与根轨迹，右侧审核、方向语义与质量信息">
+      </figure>
+      <p class="shot-cap"><span>动作库：描述与编号混合检索，三维骨架预览，审核与质量信息并排查看。</span><span>界面示意 · 演示数据</span></p>
+    </div>
+  </section>
+
+  <section class="block" id="workflow">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">工作流</span><h2>一个动作从描述到交付</h2></div>
+      <ol class="flow">
+        <li><i>01</i><b>生成</b><p>用一句描述生成单人动作。服务器改写提示词，或直接提交英文原文；任务以卡片流展示排队与进度。</p></li>
+        <li><i>02</i><b>检索与审阅</b><p>编号、关键词与跨语言语义在一个搜索框里。逐个预览骨架，查看人工审核、机器评分和质量提示。</p></li>
+        <li><i>03</i><b>编辑与拼接</b><p>在时间轴上选取片段描述修改，或把两段素材拼成一条，由生成模型补出自然的过渡。</p></li>
+        <li><i>04</i><b>重定向与精修</b><p>选择目标机器人求解轨迹，用实体模型播放；在问题帧调整关节、部位与关键帧，再求解并检查。</p></li>
+        <li><i>05</i><b>导出与接入</b><p>下载 NPZ 或 BVH，批量打包附导出报告；或让 Agent 通过 Gadget 调用同样的能力。</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">功能</span><h2>为审阅与修改而设计</h2></div>
+
+      <div class="feature">
+        <div class="text">
+          <p class="caps">编辑修正</p>
+          <h3>像剪辑视频一样处理动作</h3>
+          <p>素材箱、监视器和时间线组成剪辑式布局。拖动裁剪入点出点，在俯视图里平移和旋转整段轨迹，检查两段之间的间距与转向。</p>
+          <ul>
+            <li>两段拼接：只重新生成过渡段，两端素材帧保持不变</li>
+            <li>片段修正：在骨架缩略帧时间轴上划选 12–300 帧，描述修改</li>
+            <li>原动作始终保留，候选需对比后明确接受</li>
+          </ul>
+        </div>
+        <figure><img src="assets/editor.webp" width="1920" height="1147" loading="lazy" alt="Kinora 编辑修正：左侧素材箱与检查器，右侧三维监视器，底部两段素材与过渡的时间线"></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <p class="caps">机器人精修</p>
+          <h3>在问题帧上直接修</h3>
+          <p>精修使用任务实际的机器人模型。时间轴标出碰撞、越限、足滑等逐帧问题；点击即可跳到对应帧，按步骤调整后提交求解。</p>
+          <ul>
+            <li>关节滑块实时更新实体姿态，可叠加原始版本对比</li>
+            <li>拖动手脚目标点或输入位移，关键帧之间平滑插值</li>
+            <li>候选检查速度、加速度、衔接突变与碰撞、限位；不通过则禁止导出</li>
+          </ul>
+          <p style="margin:14px 0 0;font-size:12.5px;color:var(--ink-3)">自动检查不等于真机安全认证，请结合具体机器人、控制器与环境验证。</p>
+        </div>
+        <figure><img src="assets/refine.webp" width="1920" height="1211" loading="lazy" alt="Kinora 机器人精修：左侧机器人实体预览与带问题标记的时间轴，右侧分步骤的选区、关节、部位与关键帧设置"></figure>
+      </div>
+
+      <div class="grid3">
+        <div><h4>多种机器人</h4><p>内置机器人重定向与实体网格预览；可导入 URDF、MuJoCo XML 或带资源的 ZIP，按账号隔离保存并查看关节限位。</p></div>
+        <div><h4>可追溯的导出</h4><p>NPZ 保留人体源数据，BVH 导出骨架动画。多选打包为 ZIP，内附逐项导出报告，失败项不会被静默略过。</p></div>
+        <div><h4>团队与自托管</h4><p>密码与邮箱账号、管理员工具与 Gadget Key；服务端部署在自己的服务器上，数据与备份由团队自行掌握。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="start">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">开始使用</span><h2>选择你的开始方式</h2></div>
+      <div class="paths">
+        <div class="path">
+          <p class="caps">桌面端</p>
+          <h3>连接团队服务器</h3>
+          <ol><li>下载并安装适合系统的安装包。</li><li>填写团队提供的 Kinora 服务器地址，用自己的账号登录。</li><li>在动作库检索、预览，再生成、重定向或精修。</li></ol>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">客户端不附带账号、模型或本地 GPU 推理；能否生成、编辑和重定向，以所连接服务器的配置与权限为准。</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md">安装与更新说明 →</a>
+        </div>
+        <div class="path">
+          <p class="caps">服务端</p>
+          <h3>部署自己的服务器</h3>
+          <pre><code>python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python scripts/seed_demo.py --root runtime/demo
+bash commands/kinora-server.sh doctor --full</code></pre>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">本机演示只需 CPU，可先验证登录、动作库与预览。完整生成、编辑和精修需按部署指南安装资产、Kimodo 与授权模型，并通过 <code>doctor --full</code> 检查。</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/SERVER.md">服务端入门 →</a>
+        </div>
+        <div class="path">
+          <p class="caps">Agent</p>
+          <h3>让 Agent 使用 Kinora</h3>
+          <pre><code>export MOTIONFARM_URL="https://your-kinora.example.com"
+export MOTIONFARM_API_KEY_FILE="$HOME/.config/kinora/api-key.txt"
+python3 motionfarm-gadget/motionfarm.py info</code></pre>
+          <p style="margin:0 0 18px;font-size:13.5px;color:var(--ink-2)">CLI 直接运行，或作为本地 MCP 子进程供 Codex / Cursor 调用。规划由你已有的 Agent 完成。</p>
+          <a class="more" href="https://github.com/PoirotJin/kinora/blob/main/docs/GADGET.md">Gadget 入门 →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="download">
+    <div class="wrap">
+      <div class="sec-head"><span class="caps">下载</span><h2>已编译，下载即可安装</h2></div>
+      <table class="dl">
+        <thead><tr><th>下载</th><th>版本</th><th>适用环境</th><th></th></tr></thead>
+        <tbody>
+          <tr data-os="mac"><td><span class="name">macOS</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Apple 芯片与 Intel，Universal DMG</td><td><a class="btn sm" data-asset="dmg" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_universal.dmg">下载 DMG</a></td></tr>
+          <tr data-os="win"><td><span class="name">Windows</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Windows 10 / 11，x86_64 安装程序</td><td><a class="btn sm" data-asset="exe" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_x64-setup.exe">下载 EXE</a></td></tr>
+          <tr data-os="linux"><td><span class="name">Linux</span></td><td class="ver" data-ver="desktop">0.5.1</td><td class="env">Ubuntu 22.04+ / Debian 12+，x86_64</td><td><a class="btn sm" data-asset="deb" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_amd64.deb">下载 DEB</a></td></tr>
+          <tr><td><span class="name">服务端源码</span></td><td class="ver" data-ver="server">0.5.1</td><td class="env">完整服务端、独立人体骨架与计算队列，含 Gadget 0.15.2；模型权重、GPU 环境与机器人资产需另行安装</td><td><a class="btn sm" data-asset="server" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-server-0.5.1.zip">下载 ZIP</a></td></tr>
+          <tr><td><span class="name">Gadget</span></td><td class="ver" data-ver="gadget">0.15.2</td><td class="env">Python 3.10+，CLI / MCP</td><td><a class="btn sm" data-asset="gadget" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-gadget-0.15.2.zip">下载 ZIP</a></td></tr>
+        </tbody>
+      </table>
+      <p class="dl-meta"><a data-asset="sums" href="https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt">SHA-256 校验文件</a><a href="https://github.com/PoirotJin/kinora/releases">全部版本</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/VERSIONS.md">版本与兼容性</a><span id="release-src">桌面端、服务端源码与 Gadget 各自独立版本。</span></p>
+      <p class="license-line">Kinora 自有代码以 <a href="https://github.com/PoirotJin/kinora/blob/main/LICENSE">Apache License 2.0</a> 授权；第三方组件、模型与资产遵循各自许可，见 <a href="https://github.com/PoirotJin/kinora/blob/main/NOTICE">NOTICE</a>。</p>
+
+      <div class="verify">
+        <div><h4>macOS</h4><p>打开 DMG，将 Kinora 拖入“应用程序”。首次可右键应用选择“打开”。</p><p><code>shasum -a 256 文件名.dmg</code></p></div>
+        <div><h4>WINDOWS</h4><p>运行安装向导。未签名的安装包可能出现 SmartScreen，确认来源与校验值后再继续。</p><p><code>Get-FileHash .\文件名.exe -Algorithm SHA256</code></p></div>
+        <div><h4>LINUX</h4><p>在下载目录用包管理器安装，依赖会自动解析。</p><p><code>sudo apt install ./文件名.deb</code></p></div>
+      </div>
+
+      <p class="note"><strong>安装包尚未进行 macOS 公证和 Windows 代码签名。</strong> 请从本页或 GitHub Releases 下载，并用 SHA-256 核对；遇到完整性错误时不要关闭系统安全机制。已有用户可在客户端“设置 → 检查更新”中升级，应用内更新取决于所连接服务器的更新配置。</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img class="mark" src="assets/kinora-mark.png" alt="" width="22" height="22" style="width:22px;height:22px">kinora</a>
+    <span>动作生成、审阅、重定向与精修</span>
+    <nav aria-label="页脚链接"><a href="https://github.com/PoirotJin/kinora">GitHub</a><a href="https://github.com/PoirotJin/kinora/releases">Releases</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md">安装</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/SERVER.md">服务端</a><a href="https://github.com/PoirotJin/kinora/blob/main/docs/GADGET.md">Gadget</a><a href="https://github.com/PoirotJin/kinora/blob/main/LICENSE">Apache-2.0</a><a href="fonts/EB-Garamond-OFL.txt">字体许可</a></nav>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>

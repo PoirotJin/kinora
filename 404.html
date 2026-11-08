@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>页面不存在 · Page not found · Kinora</title>
+<link rel="icon" type="image/png" href="/kinora/assets/kinora-icon.png">
+<style>
+@font-face { font-family: "MF Garamond"; src: url("/kinora/fonts/eb-garamond-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+:root { --paper: #f3f1ec; --ink: #0b0b0b; --ink-2: #57544e; --rule: #d6d1c7; --mark: none; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --paper: #0f0f0e; --ink: #eeebe4; --ink-2: #b3aea4; --rule: #2e2c28; --mark: invert(1); color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--paper); color: var(--ink); font: 15px/1.7 "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif; text-align: center; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 500 40px/1 "MF Garamond", Georgia, serif; letter-spacing: -.025em; }
+.brand img { width: 40px; height: 40px; filter: var(--mark); }
+p { margin: 22px 0 30px; color: var(--ink-2); }
+a.btn { margin: 4px; display: inline-flex; align-items: center; height: 44px; padding: 0 24px; background: var(--ink); color: var(--paper); text-decoration: none; letter-spacing: .12em; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="/kinora/assets/kinora-mark.png" alt="">kinora</div>
+  <p>这个页面不存在，可能已经移动或删除。<br><span lang="en">This page doesn’t exist. It may have been moved or removed.</span></p>
+  <a class="btn" href="/kinora/">返回首页</a> <a class="btn" href="/kinora/en/" lang="en">Back to home</a>
+</main>
+</body>
+</html>
