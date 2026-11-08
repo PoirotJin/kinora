@@ -23,12 +23,12 @@ Kinora 将动作生成、检索、预览、重定向和精修放在同一个工�
 | [macOS 安装包 · DMG](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_universal.dmg) | 0.5.1 | Apple 芯片与 Intel，Universal |
 | [Windows 安装包 · EXE](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_x64-setup.exe) | 0.5.1 | x86_64 |
 | [Linux 安装包 · DEB](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora_0.5.1_amd64.deb) | 0.5.1 | Ubuntu 22.04+ / Debian 12+，x86_64 |
-| [服务端源码 · ZIP（含 Gadget）](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-server-0.5.1.zip) | 0.5.1 | 完整服务端、计算队列，含 Gadget 0.15.2 |
+| [服务端源码 · ZIP（含 Gadget）](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/kinora-server-0.5.2.zip) | 0.5.2 | 完整服务端、计算队列，含 Gadget 0.15.2 |
 | [Gadget · ZIP](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-gadget-0.15.2.zip) | 0.15.2 | Python 3.10+，CLI / MCP |
 
-[SHA-256 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt) · [安装与更新说明](docs/INSTALL.md) · [版本与兼容性](docs/VERSIONS.md)
+[桌面与 Gadget 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt) · [服务端 0.5.2 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/SHA256SUMS.txt) · [安装与更新说明](docs/INSTALL.md) · [版本与兼容性](docs/VERSIONS.md)
 
-> 服务端源码已更新为配套 **0.5.0 完整版**，内含 **Gadget 0.15.2**。模型权重、GPU 环境与机器人资产需按部署指南安装；包内提供官方资产下载、真实生成/编辑验收及 `doctor --full` 环境检查。
+> 服务端源码已更新为**0.5.2 完整版**，内含 **Gadget 0.15.2**。模型权重、GPU 环境与机器人资产需按部署指南安装；包内提供官方资产下载、真实生成/编辑验收及 `doctor --full` 环境检查。
 
 ## 选择你的开始方式
 
@@ -46,7 +46,7 @@ Kinora 将动作生成、检索、预览、重定向和精修放在同一个工�
 
 源码包含当前的 Kimodo 1–120 秒生成、局部修复、双片段拼接、NPZ/BVH 导出、自定义机器人、重定向、实体网格精修和动力学验收。账号页面和 Gadget 均随包提供。默认 CPU 演示可先验证登录、目录与预览，完整计算功能需完成环境配置。
 
-本次已通过全新解压启动、156 项核心回归、49 项 Gadget 测试，以及真实 GPU 生成/修复/拼接与 G1 120 秒精修正反例验证。[查看验证范围](docs/RELEASE_VALIDATION.md)。 正式发行包已再次独立解压复验：156 项核心回归加 1 项首次启动检查、49 项 Gadget 测试，以及 GPU 与 G1 链路均通过；[查看复验摘要](docs/RELEASE_RECHECK_0.5.1.json)。
+0.5.2 已通过 159 项完整回归、最终代码定向复验、打包后首次启动与 49 项 Gadget 测试，以及 7 个真实 GPU 案例和 G1 30 帧重定向。[查看 0.5.2 修复与验证](docs/FOOT_CONTACT_0.5.2.md)。[0.5.1 基准验证记录](docs/RELEASE_VALIDATION.md) 继续保留。
 
 ### 让 Agent 使用 Kinora
 
@@ -71,3 +71,5 @@ Key 文件由你自行保存；使用自己的服务器地址替换示例。完�
 Kinora 自有代码（桌面客户端、服务端与 Gadget）以 [Apache License 2.0](LICENSE) 授权。第三方组件保留各自许可，不因此改为 Apache-2.0：holosoma 为 Apache-2.0，three.js 为 MIT，EB Garamond 字体为 SIL OFL 1.1。署名与说明见 [NOTICE](NOTICE)。另行下载或安装的模型权重、机器人资产与外部服务遵循各自条款。再分发时请保留 LICENSE、NOTICE 及包内第三方许可文件。
 
 自动几何检查、动力学验证或下载完成，都不等于真机安全认证。请结合具体机器人、控制器与运行环境验证动作。
+
+服务端 **0.5.2** 已修复转弯拼接脚部漂移：原 30° 案例由约 14.3 cm 降至 4.6 cm；新增不同种子、左转和 60° 转弯测试通过。超过原 8 cm 阈值的候选现会隔离。[查看修复与验证](docs/FOOT_CONTACT_0.5.2.md)。桌面与 Gadget 版本不变。

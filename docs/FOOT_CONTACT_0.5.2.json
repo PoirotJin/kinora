@@ -1,0 +1,129 @@
+{
+  "server_version": "0.5.2",
+  "desktop_version": "0.5.1",
+  "gadget_version": "0.15.2",
+  "date": "2026-11-09",
+  "scope": "Isolated release tests; production unchanged. Existing authorized weights and compute environments reused.",
+  "baseline_server_version": "0.5.1",
+  "baseline_turn_drift_proxy_m": 0.14271262537119356,
+  "core_and_startup_tests": 159,
+  "final_targeted_tests": 8,
+  "tests_overlap": true,
+  "cuda_cases": [
+    {
+      "name": "source",
+      "seed": 210,
+      "sequence_passed": true,
+      "editing_passed": null,
+      "exterior_bitwise_equal": null,
+      "support_drift_proxy_m": null,
+      "support_gate_passed": null,
+      "gait_warnings": null,
+      "forward_distance_fraction": null,
+      "root_continuity_passed": null,
+      "pelvis_yaw_step_max_deg": null
+    },
+    {
+      "name": "repair",
+      "seed": 211,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": null,
+      "support_gate_passed": null,
+      "gait_warnings": null,
+      "forward_distance_fraction": null,
+      "root_continuity_passed": null,
+      "pelvis_yaw_step_max_deg": null
+    },
+    {
+      "name": "splice-straight",
+      "seed": 212,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": 0.03651315319734092,
+      "support_gate_passed": true,
+      "gait_warnings": [],
+      "forward_distance_fraction": 1.0,
+      "root_continuity_passed": true,
+      "pelvis_yaw_step_max_deg": 0.49603925770903434
+    },
+    {
+      "name": "splice-turn",
+      "seed": 213,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": 0.04555175220064374,
+      "support_gate_passed": true,
+      "gait_warnings": [],
+      "forward_distance_fraction": 1.0,
+      "root_continuity_passed": true,
+      "pelvis_yaw_step_max_deg": 2.1207465253452504
+    },
+    {
+      "name": "splice-turn-repeat",
+      "seed": 214,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": 0.03500170646052111,
+      "support_gate_passed": true,
+      "gait_warnings": [],
+      "forward_distance_fraction": 1.0,
+      "root_continuity_passed": true,
+      "pelvis_yaw_step_max_deg": 2.0823536363624404
+    },
+    {
+      "name": "splice-turn-left",
+      "seed": 215,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": 0.017764062025236643,
+      "support_gate_passed": true,
+      "gait_warnings": [],
+      "forward_distance_fraction": 1.0,
+      "root_continuity_passed": true,
+      "pelvis_yaw_step_max_deg": 1.8753097448876015
+    },
+    {
+      "name": "splice-turn-wide",
+      "seed": 216,
+      "sequence_passed": true,
+      "editing_passed": true,
+      "exterior_bitwise_equal": true,
+      "support_drift_proxy_m": 0.04234641456661764,
+      "support_gate_passed": true,
+      "gait_warnings": [],
+      "forward_distance_fraction": 1.0,
+      "root_continuity_passed": true,
+      "pelvis_yaw_step_max_deg": 1.8941635539491983
+    }
+  ],
+  "tested_code_sha256": {
+    "g2h/kimodo_steps.py": "2e8c6cd6e2a83d3e740ffd630514aa39225f24bce546055c8e9aa7435a0d7c07",
+    "g2h/human_rig.py": "1097e57dc3a09cdf96f2efed434d269be2495780b609fa3d6e7c3424df16ec34",
+    "g2h/kimodo_edit.py": "94f7793ec434c2938af3e8735a9437c1a653069d6ba585a920f92f9fde132e3a",
+    "g2h/kimodo_bridge.py": "56b33ae05edd5dddc3a93b82773378bc3e0bb7aaefc252695ce7350dc8dc1eef",
+    "g2h/kimodo_gait.py": "821fe93b9b6fa3d686abc5c2e5ff7cd552e458202889ad6ed1567d4671be7d52",
+    "g2h/kimodo_root.py": "600d14d95bf6c0ad0a17c78c67df2df6638e7445479ddeca138abd8655ba3233",
+    "g2h/kimodo_adapter.py": "a9fc1873984781dbbc7fa0840e8172ef0c242d92733f2c5991d4383f5c279f79",
+    "g2h/kimodo_long.py": "71c4a10ab59e2a63c10df3129c587013ff18520e3127570b2077b35f4f6f18bd",
+    "g2h/motion_splice.py": "da76e99c40838956cbaee9bc5b6f72b7c27b0ce8f88082239f92e89d4e1a100f",
+    "scripts/collection_kimodo.py": "9b6781b890de4f68a0717804bbba616eb40c88e67db44fed658da226f4afca0b"
+  },
+  "receipt_sha256": "0c8660059785f479c50a284cacb0c39b1fe6e9620b463fdefd1e9b35bebf7f6f",
+  "limits": {
+    "support_drift_proxy_m": 0.08,
+    "contact_height_band_m": 0.065,
+    "contact_vertical_speed_max_m_s": 0.2,
+    "minimum_contact_frames": 5
+  },
+  "limitations": [
+    "Skeleton proxy, not measured sole contact or hardware safety.",
+    "Five splice cases do not establish population-wide performance.",
+    "Upstream model generation can still fail; failed contact candidates are quarantined."
+  ]
+}

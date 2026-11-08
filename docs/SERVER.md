@@ -1,6 +1,6 @@
 # 服务端入门
 
-下载 [Kinora Server 0.5.1 完整源码](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-server-0.5.1.zip)，解压后进入 `kinora-server-0.5.1/`。包内包含完整服务端、Gadget 0.15.2、依赖清单、资产安装脚本和验收工具。
+下载 [Kinora Server 0.5.2 完整源码](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/kinora-server-0.5.2.zip)，解压后进入 `kinora-server-0.5.2/`。包内包含完整服务端、Gadget 0.15.2、依赖清单、资产安装脚本和验收工具。
 
 ## 先启动本机演示
 
