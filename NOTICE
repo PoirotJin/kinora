@@ -1,0 +1,22 @@
+Kinora
+Copyright 2026 PoirotJin
+
+This product includes software developed as part of Kinora (the desktop
+client, the server and Gadget), licensed under the Apache License,
+Version 2.0. See LICENSE.
+
+Third-party components keep their own licenses. They are not relicensed
+under the Apache License, and their terms take precedence for those
+components:
+
+- holosoma (third_party/holosoma): Apache License 2.0,
+  Copyright Amazon.com, Inc. or its affiliates. See its LICENSE, NOTICE
+  and THIRD_PARTY_LICENSES files.
+- three.js: MIT License, Copyright 2010-2024 three.js authors. See
+  THREE-LICENSE.txt next to each bundled copy.
+- EB Garamond: SIL Open Font License 1.1. See EB-Garamond-OFL.txt.
+
+Model weights and externally installed robot assets, Kimodo, MotionCorrection, SMPL
+family models and other resources that operators download or install
+separately are not part of this distribution and remain under their own
+licenses and access terms.

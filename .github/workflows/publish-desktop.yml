@@ -1,0 +1,84 @@
+name: Publish desktop release
+# Publishes a Kinora desktop version from installers built in the private
+# source repository. Each input URL is a short-lived artifact download link;
+# every installer must match the SHA-256 published with the source release.
+# Server source and Gadget files are carried over unchanged from an earlier
+# release of this repository so each release is a complete download set.
+on:
+  workflow_dispatch:
+    inputs:
+      version: {description: 'Desktop version, e.g. 0.5.1', required: true}
+      dmg_url: {description: 'Artifact ZIP URL containing the universal .dmg', required: true}
+      exe_url: {description: 'Artifact ZIP URL containing the x64 setup .exe', required: true}
+      deb_url: {description: 'Artifact ZIP URL containing the amd64 .deb', required: true}
+      sha256: {description: 'Expected "sha  filename" lines for the three installers, separated by ;', required: true}
+      carry_from: {description: 'Release tag to copy server and Gadget files from', required: true, default: 'kinora-v0.5.1'}
+      notes: {description: 'Change list, items separated by ;', required: false, default: ''}
+permissions:
+  contents: write
+concurrency:
+  group: publish-desktop-${{ inputs.version }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ inputs.version }}
+      TAG: kinora-v${{ inputs.version }}
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Bad version"; exit 1; }
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release $TAG already exists"; exit 1; fi
+      - name: Download and verify installers
+        env:
+          DMG: ${{ inputs.dmg_url }}
+          EXE: ${{ inputs.exe_url }}
+          DEB: ${{ inputs.deb_url }}
+          SUMS: ${{ inputs.sha256 }}
+        run: |
+          mkdir -p dist zips
+          for kind in DMG EXE DEB; do
+            curl -fsSL --retry 3 -o "zips/$kind.zip" "${!kind}"
+            unzip -q -o "zips/$kind.zip" -d "zips/$kind"
+          done
+          cp zips/DMG/*_universal.dmg zips/EXE/*_x64-setup.exe zips/DEB/*_amd64.deb dist/
+          ls -l dist
+          tr ';' '\n' <<< "$SUMS" | sed 's/^ *//' | grep . > expected.txt
+          test "$(wc -l < expected.txt)" -eq 3
+          (cd dist && sha256sum -c ../expected.txt)
+          for f in dist/*; do grep -q "kinora_${VERSION}_" <<< "$(basename "$f")" || { echo "Unexpected installer version: $f"; exit 1; }; done
+      - name: Carry over server source and Gadget
+        run: |
+          gh release download "${{ inputs.carry_from }}" -p 'kinora-server-[0-9]*.zip' -p 'kinora-gadget-*.zip' -D dist
+          ls dist/kinora-server-*.zip dist/kinora-gadget-*.zip
+      - name: Publish
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if [ -n "$NOTES" ]; then { echo "## $VERSION 更新"; echo; tr ';' '\n' <<< "$NOTES" | sed 's/^ *//' | grep . | sed 's/^/- /'; echo; } > notes.md; fi
+          (cd dist && sha256sum * | sort -k2) > SHA256SUMS.txt
+          server=$(ls dist/kinora-server-*.zip | xargs -n1 basename); gadget=$(ls dist/kinora-gadget-*.zip | xargs -n1 basename)
+          {
+            echo "# Kinora $VERSION · 桌面安装包"
+            echo
+            echo "[项目主页](https://poirotjin.github.io/kinora/) · [安装与更新](https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md) · [版本说明](https://github.com/PoirotJin/kinora/blob/main/docs/VERSIONS.md)"
+            echo
+            echo "| 文件 | 用途 |"
+            echo "| --- | --- |"
+            echo "| \`kinora_${VERSION}_universal.dmg\` | macOS Apple 芯片 / Intel |"
+            echo "| \`kinora_${VERSION}_x64-setup.exe\` | Windows x86_64 |"
+            echo "| \`kinora_${VERSION}_amd64.deb\` | Ubuntu 22.04+ / Debian 12+ x86_64 |"
+            echo "| \`$server\` | 完整服务端源码（与 ${{ inputs.carry_from }} 相同，未变更） |"
+            echo "| \`$gadget\` | 独立 CLI / MCP 工具（与 ${{ inputs.carry_from }} 相同，未变更） |"
+            echo "| \`SHA256SUMS.txt\` | 所有文件的 SHA-256 |"
+            echo
+            cat notes.md 2>/dev/null || true
+            echo "安装包未经代码签名：Windows 会出现 SmartScreen 提示；macOS 为 ad-hoc 签名、未公证，首次请右键“打开”。请用 SHA-256 核对文件。已有用户可在“设置 → 检查更新”中升级（取决于所连接服务器的更新配置）。"
+            echo
+            echo "Kinora 自有代码以 Apache License 2.0 授权；第三方组件遵循各自许可，见 NOTICE。"
+          } > body.md
+          gh release create "$TAG" dist/* SHA256SUMS.txt --target main --latest \
+            --title "Kinora $VERSION · 桌面安装包 / 服务端源码 / Gadget" --notes-file body.md

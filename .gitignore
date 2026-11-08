@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+*.dmg
+*.exe
+*.deb
+__pycache__/
