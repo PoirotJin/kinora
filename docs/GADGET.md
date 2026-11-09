@@ -1,10 +1,12 @@
+> 桌面客户端 0.7.0：登录后进入「Gadget 接入」，即可下载包、创建/撤销个人密钥和生成配置。普通用户无需登录管理员网页。
+
 # Gadget 入门
 
 [Gadget 0.15.2 下载](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-gadget-0.15.2.zip)
 
 Gadget 是 Python CLI 与 MCP 工具包，使用 Python 3.10+ 标准库。解压后得到 `motionfarm-gadget/`。完整工具说明、提示词指南和客户端配置模板都在包内。
 
-1. 从自己的 Kinora 实例获取个人 API Key，保存到仅自己可读的文件。
+1. 在 Kinora 桌面客户端 0.7.0 的「Gadget 接入」中创建个人 API Key，保存到仅自己可读的文件。
 2. 设置 `MOTIONFARM_URL` 和 `MOTIONFARM_API_KEY_FILE`，运行连接检查。
 3. 根据 `info` 返回的能力选择操作；新编辑与动力学工具需要相应服务端。
 

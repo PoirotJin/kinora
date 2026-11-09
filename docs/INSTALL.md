@@ -4,20 +4,20 @@
 
 - **macOS**：打开 DMG，将 Kinora 拖入 Applications。当前为 ad-hoc 签名，尚未公证；首次可右键应用选择“打开”。若提示损坏或完整性异常，先核对下载文件，不要关闭系统安全机制。
 - **Windows**：运行 x64 EXE 安装向导。当前没有 Windows 代码签名，可能出现 SmartScreen；仅在确认来源及校验值后选择继续。
-- **Linux**：在下载目录执行 `sudo apt install ./kinora_0.6.0_amd64.deb`，由包管理器安装依赖。
+- **Linux**：在下载目录执行 `sudo apt install ./kinora_0.7.0_amd64.deb`，由包管理器安装依赖。
 
 校验命令（使用对应文件名）：
 
 ```bash
 # macOS
-shasum -a 256 kinora_0.6.0_universal.dmg
+shasum -a 256 kinora_0.7.0_universal.dmg
 # Linux
-sha256sum kinora_0.6.0_amd64.deb
+sha256sum kinora_0.7.0_amd64.deb
 ```
 
 ```powershell
 # Windows PowerShell
-Get-FileHash .\kinora_0.6.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\kinora_0.7.0_x64-setup.exe -Algorithm SHA256
 ```
 
 安装后填入服务器地址，再用该实例的账号登录。客户端不附带服务器账号、模型或本地 GPU 推理环境。使用自托管服务器时，功能以该服务器实际配置为准。
@@ -26,8 +26,12 @@ Get-FileHash .\kinora_0.6.0_x64-setup.exe -Algorithm SHA256
 
 验证范围：已有 macOS 真实更新验证，以及 Windows Server 2025、Ubuntu 22.04 / 24.04 的全新安装与覆盖升级检查。上述记录不等于对所有 Windows 桌面版本或全部交互功能的验收。
 
-## 0.6.0 账号入口修复
+## 0.6.0 账号入口修复（0.7.0 保留）
 
 点击“申请账号”或“找回密码”将自动打开系统默认浏览器，不再创建可能白屏的内置账号窗口。申请页提供提交申请与进度查询；管理员审批通过后，使用申请时设置的用户名和密码登录。该审批流程需要服务器已部署对应功能。
 
 本次同时发布团队更新服务器的签名更新清单；已有客户端可在设置中检查更新。其他自托管实例需由各自管理员配置更新服务。
+
+## Gadget 接入
+
+升级到 0.7.0 后，普通用户登录客户端并进入主导航「Gadget 接入」。下载接入包、创建个人密钥，再按本机路径生成配置；无需登录管理员网页。密钥默认只读，按需勾选生成或重定向权限。

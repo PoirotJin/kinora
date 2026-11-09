@@ -20,13 +20,13 @@ Kinora 将动作生成、检索、预览、重定向和精修放在同一个工�
 
 | 下载 | 版本 | 适用环境 |
 | --- | --- | --- |
-| [macOS 安装包 · DMG](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.6.0/kinora_0.6.0_universal.dmg) | 0.6.0 | Apple 芯片与 Intel，Universal |
-| [Windows 安装包 · EXE](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.6.0/kinora_0.6.0_x64-setup.exe) | 0.6.0 | x86_64 |
-| [Linux 安装包 · DEB](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.6.0/kinora_0.6.0_amd64.deb) | 0.6.0 | Ubuntu 22.04+ / Debian 12+，x86_64 |
+| [macOS 安装包 · DMG](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.7.0/kinora_0.7.0_universal.dmg) | 0.7.0 | Apple 芯片与 Intel，Universal |
+| [Windows 安装包 · EXE](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.7.0/kinora_0.7.0_x64-setup.exe) | 0.7.0 | x86_64 |
+| [Linux 安装包 · DEB](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.7.0/kinora_0.7.0_amd64.deb) | 0.7.0 | Ubuntu 22.04+ / Debian 12+，x86_64 |
 | [服务端源码 · ZIP（含 Gadget）](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/kinora-server-0.5.2.zip) | 0.5.2 | 完整服务端、计算队列，含 Gadget 0.15.2 |
 | [Gadget · ZIP](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/kinora-gadget-0.15.2.zip) | 0.15.2 | Python 3.10+，CLI / MCP |
 
-[桌面校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.6.0/SHA256SUMS.txt) · [Gadget 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt) · [服务端 0.5.2 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/SHA256SUMS.txt) · [安装与更新说明](docs/INSTALL.md) · [版本与兼容性](docs/VERSIONS.md)
+[桌面校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.7.0/SHA256SUMS.txt) · [Gadget 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.5.1/SHA256SUMS.txt) · [服务端 0.5.2 校验文件](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/SHA256SUMS.txt) · [安装与更新说明](docs/INSTALL.md) · [版本与兼容性](docs/VERSIONS.md)
 
 > 服务端源码已更新为**0.5.2 完整版**，内含 **Gadget 0.15.2**。模型权重、GPU 环境与机器人资产需按部署指南安装；包内提供官方资产下载、真实生成/编辑验收及 `doctor --full` 环境检查。
 
@@ -38,7 +38,7 @@ Kinora 将动作生成、检索、预览、重定向和精修放在同一个工�
 2. 填写团队提供的 Kinora 服务器地址。点击“申请账号”会打开系统浏览器；审批模式的服务器由管理员通过后开通，无需邮箱验证。已有账号直接登录。
 3. 在动作库检索、预览动作，再按服务器提供的能力生成、重定向或精修。
 
-桌面 0.6.0 配合已启用相应能力的服务端，支持实体机器人网格预览、关节调整、关键帧草稿与原动作对比。候选经过检查并明确接受后才能作为已验收结果导出。
+桌面 0.7.0 配合已启用相应能力的服务端，支持实体机器人网格预览、关节调整、关键帧草稿与原动作对比。候选经过检查并明确接受后才能作为已验收结果导出。
 
 ### 部署自己的服务器
 
