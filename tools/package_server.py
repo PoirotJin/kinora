@@ -1,6 +1,7 @@
 """Package an explicitly prepared Kinora server tree, excluding installed/runtime assets."""
-import argparse,hashlib,json,re,zipfile
+import argparse,hashlib,json,re,tempfile,zipfile
 from pathlib import Path
+from release_gate import inspect
 EXCLUDE={'.git','.venv','.retarget-venv','.kimodo-venv','.vendor','__pycache__','runtime','ckpts','node_modules'}
 ALLOWED={'.py','.js','.cjs','.css','.html','.json','.md','.txt','.toml','.rs','.xml','.urdf','.sh','.woff2','.yml','.yaml'}
 NAMES={'LICENSE','NOTICE','THIRD_PARTY_LICENSES','VERSION','.gitignore'}
@@ -30,11 +31,20 @@ def build(source,output):
     manifest={'version':version,'gadget_version':'0.15.2','scope':'Full server code; external model weights/rig meshes and runtime data are not bundled','sha256':{n:hashlib.sha256(b).hexdigest() for n,b in payload.items()}}
     raw=(json.dumps(manifest,indent=2,sort_keys=True)+'\n').encode();(source/'SOURCE_MANIFEST.json').write_bytes(raw);payload['SOURCE_MANIFEST.json']=raw
     output.parent.mkdir(parents=True,exist_ok=True)
-    with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
-        for name,data in sorted(payload.items()):
-            entry=zipfile.ZipInfo('kinora-server-'+version+'/'+name,date_time=(1980,1,1,0,0,0));entry.compress_type=zipfile.ZIP_DEFLATED;entry.create_system=3;entry.external_attr=0o100644<<16;archive.writestr(entry,data)
-    with zipfile.ZipFile(output) as archive:
-        if archive.testzip():raise ValueError('Archive CRC failed')
+    with tempfile.TemporaryDirectory(dir=output.parent, prefix='.kinora-package-') as directory:
+        staged = Path(directory) / output.name
+        with zipfile.ZipFile(staged, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+            for name, data in sorted(payload.items()):
+                entry = zipfile.ZipInfo('kinora-server-' + version + '/' + name, date_time=(1980, 1, 1, 0, 0, 0))
+                entry.compress_type = zipfile.ZIP_DEFLATED
+                entry.create_system = 3
+                entry.external_attr = 0o100644 << 16
+                archive.writestr(entry, data)
+        with zipfile.ZipFile(staged) as archive:
+            if archive.testzip():
+                raise ValueError('Archive CRC failed')
+        inspect(staged)
+        staged.replace(output)
     print(json.dumps({'file':str(output),'files':len(payload),'bytes':output.stat().st_size,'sha256':hashlib.sha256(output.read_bytes()).hexdigest()},indent=2))
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('source',type=Path);p.add_argument('output',type=Path);args=p.parse_args();build(args.source,args.output)

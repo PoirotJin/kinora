@@ -1,84 +1,144 @@
 name: Publish desktop release
-# Publishes a Kinora desktop version from installers built in the private
-# source repository. Each input URL is a short-lived artifact download link;
-# every installer must match the SHA-256 published with the source release.
-# Server source and Gadget files are carried over unchanged from an earlier
-# release of this repository so each release is a complete download set.
 on:
   workflow_dispatch:
     inputs:
-      version: {description: 'Desktop version, e.g. 0.5.1', required: true}
-      dmg_url: {description: 'Artifact ZIP URL containing the universal .dmg', required: true}
-      exe_url: {description: 'Artifact ZIP URL containing the x64 setup .exe', required: true}
-      deb_url: {description: 'Artifact ZIP URL containing the amd64 .deb', required: true}
-      sha256: {description: 'Expected "sha  filename" lines for the three installers, separated by ;', required: true}
-      carry_from: {description: 'Release tag to copy server and Gadget files from', required: true, default: 'kinora-v0.5.1'}
-      notes: {description: 'Change list, items separated by ;', required: false, default: ''}
+      version:
+        description: 'Desktop version, e.g. 0.10.0'
+        required: true
+      candidate_artifact:
+        description: 'Private MotionFarm Actions artifact ID (requires KINORA_BUILD_READ_TOKEN)'
+        required: false
+      candidate_url:
+        description: 'Alternative HTTPS URL for the exact release-candidate ZIP'
+        required: false
+      candidate_sha256:
+        description: 'SHA-256 of the Actions ZIP from the private build summary'
+        required: true
+      server_from:
+        description: 'Public release containing the server source ZIP to carry forward'
+        default: kinora-server-v0.5.2
+        required: true
+      gadget_from:
+        description: 'Public release containing the Gadget source ZIP to carry forward'
+        default: kinora-v0.5.1
+        required: true
+      server_zip_url:
+        description: 'Optional HTTPS URL for a new server source ZIP, instead of carry-forward'
+        required: false
+      gadget_zip_url:
+        description: 'Optional HTTPS URL for a new Gadget source ZIP, instead of carry-forward'
+        required: false
+      verify_only:
+        description: 'Stop after validating the complete release candidate'
+        type: boolean
+        default: false
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: publish-desktop-${{ inputs.version }}
+  group: kinora-publication
   cancel-in-progress: false
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ inputs.version }}
-      TAG: kinora-v${{ inputs.version }}
+      CANDIDATE_ARTIFACT: ${{ inputs.candidate_artifact }}
+      CANDIDATE_URL: ${{ inputs.candidate_url }}
+      CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
+      SERVER_FROM: ${{ inputs.server_from }}
+      GADGET_FROM: ${{ inputs.gadget_from }}
+      SERVER_URL: ${{ inputs.server_zip_url }}
+      GADGET_URL: ${{ inputs.gadget_zip_url }}
     steps:
-      - name: Check inputs
-        run: |
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Bad version"; exit 1; }
-          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release $TAG already exists"; exit 1; fi
-      - name: Download and verify installers
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the candidate and source archives
         env:
-          DMG: ${{ inputs.dmg_url }}
-          EXE: ${{ inputs.exe_url }}
-          DEB: ${{ inputs.deb_url }}
-          SUMS: ${{ inputs.sha256 }}
+          BUILD_READ_TOKEN: ${{ secrets.KINORA_BUILD_READ_TOKEN }}
         run: |
-          mkdir -p dist zips
-          for kind in DMG EXE DEB; do
-            curl -fsSL --retry 3 -o "zips/$kind.zip" "${!kind}"
-            unzip -q -o "zips/$kind.zip" -d "zips/$kind"
-          done
-          cp zips/DMG/*_universal.dmg zips/EXE/*_x64-setup.exe zips/DEB/*_amd64.deb dist/
-          ls -l dist
-          tr ';' '\n' <<< "$SUMS" | sed 's/^ *//' | grep . > expected.txt
-          test "$(wc -l < expected.txt)" -eq 3
-          (cd dist && sha256sum -c ../expected.txt)
-          for f in dist/*; do grep -q "kinora_${VERSION}_" <<< "$(basename "$f")" || { echo "Unexpected installer version: $f"; exit 1; }; done
-      - name: Carry over server source and Gadget
-        run: |
-          gh release download "${{ inputs.carry_from }}" -p 'kinora-server-[0-9]*.zip' -p 'kinora-gadget-*.zip' -D dist
-          ls dist/kinora-server-*.zip dist/kinora-gadget-*.zip
-      - name: Publish
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          CANDIDATE_SHA256=${CANDIDATE_SHA256#sha256:}
+          [[ "$CANDIDATE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          mkdir sources
+          download() {
+            [[ "$1" == https://* ]]
+            curl --fail --silent --location --retry 2 --max-time 120 --max-filesize 268435456 \
+              --proto '=https' --proto-redir '=https' --url "$1" --output "$2"
+          }
+          source_zip() {
+            local url=$1 tag=$2 kind=$3 filename
+            if [ -z "$url" ]; then
+              [[ "$tag" =~ ^kinora-(server-)?v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+              gh release download "$tag" -p "kinora-$kind-[0-9]*.zip" -D sources
+            else
+              filename=${url%%\?*}
+              filename=${filename##*/}
+              [[ "$filename" =~ ^kinora-$kind-[0-9]+\.[0-9]+\.[0-9]+\.zip$ ]]
+              download "$url" "sources/$filename"
+            fi
+          }
+          if [ -n "$CANDIDATE_ARTIFACT" ]; then
+            [[ -z "$CANDIDATE_URL" && "$CANDIDATE_ARTIFACT" =~ ^[0-9]+$ && -n "$BUILD_READ_TOKEN" ]]
+            GH_TOKEN="$BUILD_READ_TOKEN" gh api               "repos/PoirotJin/MotionFarm/actions/artifacts/$CANDIDATE_ARTIFACT/zip" > candidate.zip
+          else
+            [[ -n "$CANDIDATE_URL" ]]
+            download "$CANDIDATE_URL" candidate.zip
+          fi
+          unset BUILD_READ_TOKEN
+          echo "CANDIDATE_SHA256=$CANDIDATE_SHA256" >> "$GITHUB_ENV"
+          source_zip "$SERVER_URL" "$SERVER_FROM" server
+          source_zip "$GADGET_URL" "$GADGET_FROM" gadget
+      - name: Install release inspection tools
+        run: bash tools/install_release_tools.sh
+      - name: Test the release gate
+        run: python3 -m unittest discover -s tools -p test_release_gate.py
+      - name: Unpack and gate all release assets
         env:
-          NOTES: ${{ inputs.notes }}
+          KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+        run: python3 tools/prepare_release.py "$VERSION" candidate.zip "$CANDIDATE_SHA256" dist sources/*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-public-assets
+          path: dist/
+          if-no-files-found: error
+          retention-days: 3
+  publish:
+    if: ${{ !inputs.verify_only && github.ref == 'refs/heads/main' }}
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ inputs.version }}
+      TARGET: ${{ github.sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-public-assets
+          path: dist
+      - name: Publish the verified release and GitHub updater feed
         run: |
-          if [ -n "$NOTES" ]; then { echo "## $VERSION 更新"; echo; tr ';' '\n' <<< "$NOTES" | sed 's/^ *//' | grep . | sed 's/^/- /'; echo; } > notes.md; fi
-          (cd dist && sha256sum * | sort -k2) > SHA256SUMS.txt
-          server=$(ls dist/kinora-server-*.zip | xargs -n1 basename); gadget=$(ls dist/kinora-gadget-*.zip | xargs -n1 basename)
-          {
-            echo "# Kinora $VERSION · 桌面安装包"
-            echo
-            echo "[项目主页](https://poirotjin.github.io/kinora/) · [安装与更新](https://github.com/PoirotJin/kinora/blob/main/docs/INSTALL.md) · [版本说明](https://github.com/PoirotJin/kinora/blob/main/docs/VERSIONS.md)"
-            echo
-            echo "| 文件 | 用途 |"
-            echo "| --- | --- |"
-            echo "| \`kinora_${VERSION}_universal.dmg\` | macOS Apple 芯片 / Intel |"
-            echo "| \`kinora_${VERSION}_x64-setup.exe\` | Windows x86_64 |"
-            echo "| \`kinora_${VERSION}_amd64.deb\` | Ubuntu 22.04+ / Debian 12+ x86_64 |"
-            echo "| \`$server\` | 完整服务端源码（与 ${{ inputs.carry_from }} 相同，未变更） |"
-            echo "| \`$gadget\` | 独立 CLI / MCP 工具（与 ${{ inputs.carry_from }} 相同，未变更） |"
-            echo "| \`SHA256SUMS.txt\` | 所有文件的 SHA-256 |"
-            echo
-            cat notes.md 2>/dev/null || true
-            echo "安装包未经代码签名：Windows 会出现 SmartScreen 提示；macOS 为 ad-hoc 签名、未公证，首次请右键“打开”。请用 SHA-256 核对文件。已有用户可在“设置 → 检查更新”中升级（取决于所连接服务器的更新配置）。"
-            echo
-            echo "Kinora 自有代码以 Apache License 2.0 授权；第三方组件遵循各自许可，见 NOTICE。"
-          } > body.md
-          gh release create "$TAG" dist/* SHA256SUMS.txt --target main --latest \
-            --title "Kinora $VERSION · 桌面安装包 / 服务端源码 / Gadget" --notes-file body.md
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS.txt)
+          latest=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)
+          python3 - "$latest" "$VERSION" <<'PY'
+          import re, sys
+          def version(value):
+              match = re.fullmatch(r'(?:kinora-v)?([0-9]+)\.([0-9]+)\.([0-9]+)', value)
+              if not match:
+                  raise SystemExit('Unexpected release version')
+              return tuple(map(int, match.groups()))
+          if not version(sys.argv[1]) < version(sys.argv[2]):
+              raise SystemExit('The GitHub updater requires a higher version')
+          PY
+          tag="kinora-v$VERSION"
+          gh release create "$tag" dist/* --draft --target "$TARGET" \
+            --title "Kinora $VERSION" --notes "首次启动请填写你的 Kinora 服务地址。应用内更新由此 GitHub 仓库提供。"
+          gh release edit "$tag" --draft=false --latest
