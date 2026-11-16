@@ -1,9 +1,9 @@
 name: Release gate checks
 on:
   push:
-    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/release-gate-tests.yml']
+    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
   pull_request:
-    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/release-gate-tests.yml']
+    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
 permissions:
   contents: read
 jobs:

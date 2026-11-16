@@ -2,7 +2,7 @@
 set -euo pipefail
 
 sudo apt-get update
-sudo apt-get install -y libbrotli1 minisign
+sudo apt-get install -y libbrotli1 minisign zstd
 directory=$(mktemp -d "${RUNNER_TEMP:-/tmp}/kinora-tools.XXXXXX")
 archive="$directory/7zip.tar.xz"
 curl --fail --silent --show-error --location --retry 2 --max-time 60 \

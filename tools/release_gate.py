@@ -130,6 +130,30 @@ def nsis_payload(data):
         raise GateError('could not fully decode the NSIS installer stream')
     return payload
 
+def is_zstandard(data):
+    return data.startswith(b'\x28\xb5\x2f\xfd') or (
+        len(data) >= 4 and 0x50 <= data[0] <= 0x5f and data[1:4] == b'\x2a\x4d\x18'
+    )
+
+
+def decode_zstandard(data):
+    with tempfile.TemporaryDirectory(prefix='kinora-zstd-') as directory:
+        source = Path(directory) / 'payload.zst'
+        source.write_bytes(data)
+        with subprocess.Popen(
+            ['zstd', '--decompress', '--stdout', '--quiet', '-M128MB', str(source)],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        ) as process:
+            try:
+                decoded = read_bounded(process.stdout)
+            except GateError:
+                process.kill()
+                raise
+            if process.wait():
+                raise GateError('could not fully decode a Zstandard archive')
+    return decoded
+
+
 class Scanner:
     def __init__(self, seven_zip=None, renderer=None):
         self.seven_zip = seven_zip or shutil.which('7zz') or shutil.which('7z')
@@ -175,6 +199,8 @@ class Scanner:
         elif data.startswith(b'!<arch>\n') and name.endswith('.deb'):
             for member, contents in ar_members(data):
                 self.scan(contents, check_member(member, self.blocked), depth + 1)
+        elif is_zstandard(data):
+            self.scan(decode_zstandard(data), name.rsplit('.', 1)[0], depth + 1)
         elif data.startswith((b'\x1f\x8b', b'\xfd7zXZ\0', b'BZh')):
             source = io.BytesIO(data)
             if data.startswith(b'\x1f\x8b'):
@@ -207,7 +233,11 @@ class Scanner:
             self.scan_7zip(data, '.exe', depth)
         elif name in APP_NAMES and data.startswith((b'MZ', b'\x7fELF', b'\xca\xfe\xba\xbe', b'\xcf\xfa\xed\xfe')):
             self.scan_desktop(data)
-        elif name.endswith(('.zip', '.deb', '.tar.gz', '.tar.xz', '.7z', '.msi')):
+        elif name.lower().endswith((
+            '.zip', '.deb', '.tar.gz', '.tar.xz', '.tar.bz2', '.tgz', '.txz', '.tbz2',
+            '.gz', '.xz', '.bz2', '.zst', '.tzst', '.zstd', '.7z', '.rar', '.cab',
+            '.iso', '.cpio', '.msi',
+        )) or data.startswith((b'7z\xbc\xaf\x27\x1c', b'Rar!\x1a\x07', b'MSCF\0\0\0\0')):
             raise GateError('unrecognized package format')
 
     def scan_desktop(self, contents):

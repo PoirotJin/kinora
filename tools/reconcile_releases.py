@@ -1,11 +1,15 @@
 """Remove release assets that cannot be tied to a trusted Kinora gate record."""
 import argparse
 import hashlib
+import html
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
+from urllib.parse import unquote
+
+from release_gate import GateError, check_bytes, protected_addresses
 
 from release_record import MANIFEST, SIGNATURE, RECORD_FILES, signature_valid
 
@@ -126,20 +130,36 @@ def snapshot(assets):
     return sorted((item['id'], item['name'], item['state'], item['digest'], item['size']) for item in assets)
 
 
-def reconcile(github, release, baseline, owner, dry_run):
+def unsafe_release_text(release, blocked):
+    replacements = {}
+    for field, replacement in (
+        ('name', 'Kinora release ' + str(release['id'])),
+        ('body', 'Release notes removed after the disclosure check.'),
+    ):
+        value = release.get(field) or ''
+        try:
+            check_bytes(html.unescape(unquote(value)).encode(), blocked)
+        except GateError:
+            replacements[field] = replacement
+    return replacements
+
+
+def reconcile(github, release, baseline, owner, dry_run, blocked=()):
     release_id = release['id']
     assets = github.assets(release_id)
     approved = trusted_assets(github, release, assets, baseline)
+    redact = unsafe_release_text(release, blocked)
     if approved is None:
         bad, missing = sorted(asset['id'] for asset in assets), []
     else:
         bad, missing = compare(assets, approved)
-        if not (bad or missing):
+        if not (bad or missing or redact):
             return False
 
     withdraw = approved is None or (release['immutable'] and bool(bad))
-    reason = 'release' if withdraw else 'attachments'
-    print(f'Release ID {release_id}: {reason}, {len(bad)} unapproved, {len(missing)} missing', flush=True)
+    reason = 'release' if withdraw else ('release text' if redact else 'attachments')
+    print(f'Release ID {release_id}: {reason}, {len(bad)} unapproved, {len(missing)} missing, '
+          f'{len(redact)} text fields flagged', flush=True)
     if dry_run:
         return True
 
@@ -148,16 +168,21 @@ def reconcile(github, release, baseline, owner, dry_run):
     if (current['draft'] or current['tag_name'] != release['tag_name']
             or current['immutable'] != release['immutable']
             or current['target_commitish'] != release['target_commitish']
+            or (redact and any(current.get(field) != release.get(field) for field in ('name', 'body')))
             or snapshot(github.assets(release_id)) != snapshot(assets)):
         raise ReconcileError('Release changed while being checked')
     result = 'The approved attachment set is incomplete.'
     if withdraw:
         result = 'The unverified Release was withdrawn.'
+    elif redact and bad:
+        result = 'Exposed release text and unapproved attachments were removed.'
+    elif redact:
+        result = 'Exposed release text was removed.'
     elif bad:
         result = 'Unapproved attachments were removed.'
 
     # Create the directly assigned incident before mutation so an API failure cannot lose the notice.
-    if withdraw or bad:
+    if withdraw or bad or redact:
         issue = None
         try:
             issue, _ = github.notify(owner, release_id, reason, bad, missing,
@@ -167,6 +192,8 @@ def reconcile(github, release, baseline, owner, dry_run):
         if withdraw:
             github.api(f'releases/{release_id}', '-X', 'DELETE')
         else:
+            if redact:
+                github.api(f'releases/{release_id}', '-X', 'PATCH', '--input', '-', data=redact)
             for asset_id in bad:
                 github.api(f'releases/assets/{asset_id}', '-X', 'DELETE')
         print(f'Release ID {release_id}: {result}', flush=True)
@@ -187,20 +214,21 @@ def main():
     owner = args.repo.split('/', 1)[0]
     incident = False
     try:
+        blocked = protected_addresses()
         releases = github.list('releases?per_page=100')
         for release in releases:
             if release['draft']:
                 continue
             try:
-                incident |= reconcile(github, release, baseline, owner, args.dry_run)
+                incident |= reconcile(github, release, baseline, owner, args.dry_run, blocked)
             except (ReconcileError, OSError, subprocess.SubprocessError):
                 print(f'Release ID {release["id"]}: verification or remediation needs a retry', flush=True)
                 incident = True
-    except (ReconcileError, OSError, ValueError):
+    except (GateError, ReconcileError, OSError, ValueError):
         raise SystemExit('Kinora release reconciliation could not complete') from None
     if incident:
         raise SystemExit('Kinora release reconciliation detected a mismatch or incomplete check')
-    print('All published Kinora releases match their approved attachment records')
+    print('All published Kinora releases match their approved attachment records and passed the text check')
 
 
 if __name__ == '__main__':

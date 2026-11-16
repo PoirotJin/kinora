@@ -1,4 +1,6 @@
 import gzip
+import shutil
+import subprocess
 import io
 import os
 from pathlib import Path
@@ -31,6 +33,23 @@ class ReleaseGateTests(unittest.TestCase):
                 path.write_bytes(self.zip_payload('nested.zip', inner))
                 with self.assertRaisesRegex(GateError, 'protected IPv4'):
                     inspect(path)
+
+    @unittest.skipUnless(shutil.which('zstd'), 'requires Zstandard')
+    def test_nested_zstandard_inspects_contents_and_refuses_corrupt_stream(self):
+        payload = self.zip_payload('settings.env', b'192.0.2.77\nQWEN_API_KEY=sk-' + b'X' * 32)
+        archive = subprocess.check_output(['zstd', '-q', '-c'], input=payload)
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'source.zip'
+            for name in ('settings.zip.zst', 'extensionless'):
+                path.write_bytes(self.zip_payload(name, archive))
+                with self.assertRaisesRegex(GateError, 'protected IPv4'):
+                    inspect(path)
+            path.write_bytes(self.zip_payload('payload.zst', archive[:8]))
+            with self.assertRaisesRegex(GateError, 'Zstandard'):
+                inspect(path)
+            path.write_bytes(self.zip_payload('old-backup.rar', b'unsupported archive'))
+            with self.assertRaisesRegex(GateError, 'unrecognized package'):
+                inspect(path)
 
     def test_credential_reports_do_not_include_values(self):
         samples = [

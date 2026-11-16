@@ -64,6 +64,20 @@ class ReconcileTests(unittest.TestCase):
         self.assertTrue(guard.reconcile(self.github, self.release, {}, 'PoirotJin', False))
         self.github.api.assert_any_call('releases/42', '-X', 'DELETE')
 
+    def test_exposed_release_text_is_scrubbed_on_immutable_release(self):
+        self.release.update(name='Normal title', body='server=192&#46;0&#46;2&#46;77', immutable=True)
+        self.github.assets.return_value = [self.approved]
+        blocked = {b'192.0.2.77'}
+        self.assertTrue(guard.reconcile(self.github, self.release, self.baseline, 'owner', True, blocked))
+        self.github.api.assert_not_called()
+        self.assertTrue(guard.reconcile(self.github, self.release, self.baseline, 'owner', False, blocked))
+        self.github.api.assert_any_call(
+            'releases/42', '-X', 'PATCH', '--input', '-',
+            data={'body': 'Release notes removed after the disclosure check.'},
+        )
+        self.github.notify.assert_called_once()
+        self.assertNotIn('192', str(self.github.notify.call_args))
+
     def test_valid_record_cannot_be_replayed_for_another_release(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
