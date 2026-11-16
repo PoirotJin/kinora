@@ -111,6 +111,7 @@ jobs:
     if: ${{ !inputs.verify_only && github.ref == 'refs/heads/main' }}
     needs: verify
     runs-on: ubuntu-24.04
+    environment: kinora-release-signing
     permissions:
       contents: write
     env:
@@ -126,7 +127,8 @@ jobs:
         with:
           name: verified-public-assets
           path: dist
-      - name: Publish the verified release and GitHub updater feed
+      - name: Create a private draft from the verified assets
+        id: draft
         run: |
           set -euo pipefail
           (cd dist && sha256sum -c SHA256SUMS.txt)
@@ -149,8 +151,20 @@ jobs:
           draft=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
             | jq -er --arg tag "$tag" --arg target "$TARGET" \
               '[.[][] | select(.tag_name == $tag and .target_commitish == $target and .draft)] | select(length == 1) | .[0].id')
-          gh api "repos/$GH_REPO/releases/$draft/assets?per_page=100" --paginate --slurp \
+          echo "id=$draft" >> "$GITHUB_OUTPUT"
+      - name: Sign the release gate record
+        env:
+          DRAFT_ID: ${{ steps.draft.outputs.id }}
+          KINORA_RELEASE_RECORD_KEY: ${{ secrets.KINORA_RELEASE_RECORD_KEY }}
+        run: python3 tools/release_record.py dist "$GH_REPO" "$VERSION" "$DRAFT_ID" "$TARGET"
+      - name: Publish the verified release and GitHub updater feed
+        env:
+          DRAFT_ID: ${{ steps.draft.outputs.id }}
+        run: |
+          set -euo pipefail
+          gh release upload "kinora-v$VERSION" dist/KINORA-RELEASE-GATE.json dist/KINORA-RELEASE-GATE.json.sig
+          gh api "repos/$GH_REPO/releases/$DRAFT_ID/assets?per_page=100" --paginate --slurp \
             | jq 'add' > draft-assets.json
           python3 tools/verify_release_draft.py dist draft-assets.json
-          gh api "repos/$GH_REPO/releases/$draft" -X PATCH -F draft=false -f make_latest=true \
+          gh api "repos/$GH_REPO/releases/$DRAFT_ID" -X PATCH -F draft=false -f make_latest=true \
             | jq -e '.draft == false and .immutable == true'

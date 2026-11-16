@@ -1,0 +1,249 @@
+{
+  "438492043": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:399159efe1a084c1581de1e68e07b375b8561d54d1b78dce2673b4202108e09c",
+        "size": 556
+      },
+      "kinora-gadget-0.15.2.zip": {
+        "digest": "sha256:d6b091c8a909242c55cb6a2723ab778e90487d362f640aeecfd2201a71373a4c",
+        "size": 54563
+      },
+      "kinora_0.5.0_amd64.deb": {
+        "digest": "sha256:1b6c629402142260f8dbf9697652fdfe3bb9d978ebe694a0694e347e41715ab8",
+        "size": 2866730
+      },
+      "kinora_0.5.0_amd64.deb.sig": {
+        "digest": "sha256:bc1e6e9365bce3a5e4a0c146589dbdc7b259b126ee50e83f872e5613d75701ca",
+        "size": 428
+      },
+      "kinora_0.5.0_universal.dmg": {
+        "digest": "sha256:793bd854d3c9f0b6e1324a2d5a6c924913df515cc7864c8fd7eb485a7405e700",
+        "size": 4759948
+      },
+      "kinora_0.5.0_x64-setup.exe": {
+        "digest": "sha256:e2a14a6495b5c3d3f50a96914c5b5ad86f48465c031f89936d6ee1d7942e0ea0",
+        "size": 1861182
+      },
+      "kinora_0.5.0_x64-setup.exe.sig": {
+        "digest": "sha256:4f1bcdeab797a42a4afc4576af9e0cc1887d66fd9dbf379763194d40bf40e422",
+        "size": 436
+      }
+    },
+    "tag": "kinora-v0.5.0"
+  },
+  "438492124": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:3a94479c1cfeb073edef89d80a6d36cf0bfa7b892a6b5b5a7c0fb1e8dd68a8ba",
+        "size": 646
+      },
+      "kinora-gadget-0.15.2.zip": {
+        "digest": "sha256:d6b091c8a909242c55cb6a2723ab778e90487d362f640aeecfd2201a71373a4c",
+        "size": 54563
+      },
+      "kinora-server-0.5.1.zip": {
+        "digest": "sha256:764bd7bf29913c32fbadf1528033b7e8780d3f0fe378ea6e5fb44a0f0f6d72d6",
+        "size": 1484100
+      },
+      "kinora_0.5.1_amd64.deb": {
+        "digest": "sha256:71df40710671c59d206d7710c96bd1b849addf6284f15223106e9e46038b337d",
+        "size": 2869214
+      },
+      "kinora_0.5.1_amd64.deb.sig": {
+        "digest": "sha256:70c949bfd19007e901fd51c2c8eb6e3e185652545c5d60cb6826eff34a4b1bf4",
+        "size": 428
+      },
+      "kinora_0.5.1_universal.dmg": {
+        "digest": "sha256:e9aaf25d42c90d1d36662e3728bb9ecf4101cb338275df04b126e9c223abd268",
+        "size": 4766034
+      },
+      "kinora_0.5.1_x64-setup.exe": {
+        "digest": "sha256:3550df9cda77b480678501ba7297d12de52c936177cb557241e21de38fdff816",
+        "size": 1863348
+      },
+      "kinora_0.5.1_x64-setup.exe.sig": {
+        "digest": "sha256:19906593f52d06fefaaa6c160c481f5f6805b29f09fe88d164c136bfeef6866e",
+        "size": 436
+      }
+    },
+    "tag": "kinora-v0.5.1"
+  },
+  "438516027": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:228b29935db50e89e8f1cde06b7ce03c25cea5bd5819347c3d8b295c7cbb8074",
+        "size": 90
+      },
+      "kinora-server-0.5.2.zip": {
+        "digest": "sha256:bf67af22b6c84f16cd9777054a1ff2b10ee1f269bc27cf1b681e551f148f730f",
+        "size": 1491666
+      }
+    },
+    "tag": "kinora-server-v0.5.2"
+  },
+  "438885652": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:99bef00fb8e4b2dd2fb9bd43540faeee11886ffaa66438c575b5fec602dd70d4",
+        "size": 1069
+      },
+      "VALIDATION.json": {
+        "digest": "sha256:c2a0c47f580c383ba47439859700ec977995575c8234c35decf22fee781b14cd",
+        "size": 3363
+      },
+      "kinora-0.6.0-linux-x86_64.AppImage": {
+        "digest": "sha256:15777803aa31bec49d541efaca6e6b2e796a8277933ac03bd3c3e87bc61d9d08",
+        "size": 83339768
+      },
+      "kinora-0.6.0-linux-x86_64.AppImage.sig": {
+        "digest": "sha256:baa3f6ef457fee30ac0a746629e1c829b5eae975488ef69e1581f1bddc4aa3af",
+        "size": 436
+      },
+      "kinora-0.6.0-macos-universal.app.tar.gz": {
+        "digest": "sha256:193c6c4fec4a0d1afbd45a09c2e11d72b1b0e5db86a29b7a80a232dbd68d7f11",
+        "size": 4831303
+      },
+      "kinora-0.6.0-macos-universal.app.tar.gz.sig": {
+        "digest": "sha256:54a8ec5add2c566c0959ce9f6d747202d65bb0f2ddd617a2b5a4632f4ce7ae4f",
+        "size": 424
+      },
+      "kinora-0.6.0-update-server.tar.gz": {
+        "digest": "sha256:926e4689c47cc158698846420af5cfb9fe3b1a032ab194466a5149b109550b36",
+        "size": 96980781
+      },
+      "kinora_0.6.0_amd64.deb": {
+        "digest": "sha256:6ea366e11c3aeebeba90ed23fc9770163441a7e5caee8c1528d3d567d3c864e7",
+        "size": 2890016
+      },
+      "kinora_0.6.0_amd64.deb.sig": {
+        "digest": "sha256:9dac519d2e7d1adfc2def531fdfca58c054dcaeeb60107ba000790a4b386af75",
+        "size": 428
+      },
+      "kinora_0.6.0_universal.dmg": {
+        "digest": "sha256:509963b62c29001be0954f618bc0bad55877f7b9677d9d52d8de62324c916b00",
+        "size": 4778597
+      },
+      "kinora_0.6.0_x64-setup.exe": {
+        "digest": "sha256:153d736549d6c82cb1f778a50d061271c90fa6529bba3703c45b1b3419323b96",
+        "size": 1871084
+      },
+      "kinora_0.6.0_x64-setup.exe.sig": {
+        "digest": "sha256:e5f410a59b565345cc9eec0ddfd32aebfc06af9a9b1fca4637db41fdc47b6db8",
+        "size": 436
+      }
+    },
+    "tag": "kinora-v0.6.0"
+  },
+  "439050253": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:9f7e3289deaa912f87f689766df734dc7f98dd2f14657c08118ef4fef325b046",
+        "size": 763
+      },
+      "VALIDATION.json": {
+        "digest": "sha256:3d2d834e5237327aca7f424df97f255e24e1a590c68bf41c3182f1513da7611e",
+        "size": 3531
+      },
+      "kinora-0.7.0-macos-universal.app.tar.gz": {
+        "digest": "sha256:2e4aca5536e4c80b96fa6c80d90c551912ab823e3e0145f4fdf60607e4ff782b",
+        "size": 4837633
+      },
+      "kinora-0.7.0-macos-universal.app.tar.gz.sig": {
+        "digest": "sha256:df868bd773a1535bd2a975d24dd9fc9158ec44cfee66365ef7594a4f93849c43",
+        "size": 424
+      },
+      "kinora_0.7.0_amd64.deb": {
+        "digest": "sha256:5985d4efaa7edc8347db95b6544ade29811af27148f8df57c30cbe3ba3f69d8d",
+        "size": 2892886
+      },
+      "kinora_0.7.0_amd64.deb.sig": {
+        "digest": "sha256:9d29e4a719bdbd9a29e740ab92a861aee34001adbf6d7849609028e03f3bc6b3",
+        "size": 428
+      },
+      "kinora_0.7.0_universal.dmg": {
+        "digest": "sha256:b009c3f37dcf7518c77694d7bd55d177ae7399713c26ff5fd644a42f17234d2e",
+        "size": 4785360
+      },
+      "kinora_0.7.0_x64-setup.exe": {
+        "digest": "sha256:c2d96d517e2a9b5ac44f350c3817cebd9c07c2687dbc45993d774e530a7005cc",
+        "size": 1876151
+      },
+      "kinora_0.7.0_x64-setup.exe.sig": {
+        "digest": "sha256:cd7fc3a6b0ad196839918988ef7da950e99adee9daea17325aa328cc4804659b",
+        "size": 436
+      }
+    },
+    "tag": "kinora-v0.7.0"
+  },
+  "444144567": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:0c0da8ff444d6ddcde54e5dca3fc628c5396c46e3a56e06926270ead813ccd3d",
+        "size": 1047
+      },
+      "VALIDATION.json": {
+        "digest": "sha256:915d3a33ef1410910cbbfbb0dfb636152f1ccbc0ef3cb7d99b4f311ef34d5cd4",
+        "size": 7358
+      },
+      "kinora-0.9.0-linux-x86_64.AppImage": {
+        "digest": "sha256:d9a178ffd28ebe0e4af84d7d907a8e9c92d1e803215a6943619ba37ac4ae9d95",
+        "size": 83347960
+      },
+      "kinora-0.9.0-linux-x86_64.AppImage.sig": {
+        "digest": "sha256:8a8531b85ebdbcb82bea66adfa4b50c9a013a85c63f01d3a6bf5e0ec4f8249c8",
+        "size": 436
+      },
+      "kinora-0.9.0-macos-universal.app.tar.gz": {
+        "digest": "sha256:784add8d64c3d4adda11e2f57cb6dfd64dc1521a737c30c2b356912f6ee3e769",
+        "size": 4840586
+      },
+      "kinora-0.9.0-macos-universal.app.tar.gz.sig": {
+        "digest": "sha256:83289509cd1c5f83bc58b35964fdb6d942d925fce02ec0a3936ed93e5a3c4fb3",
+        "size": 424
+      },
+      "kinora_0.9.0_amd64.deb": {
+        "digest": "sha256:dd94752dfcd2a8cb8dde391da4b4cd000d3936efc7fe7ba6e2f5c939c6ec1c01",
+        "size": 2894514
+      },
+      "kinora_0.9.0_amd64.deb.sig": {
+        "digest": "sha256:62f3b53b980daf21169d443a14001c6a6fb28a37a1aa9f24a83a01b871d94828",
+        "size": 428
+      },
+      "kinora_0.9.0_universal.dmg": {
+        "digest": "sha256:08241f64a59a7baea01bce9bddbf05aa3c0217dc0168e2a4ae90e8e72b656db7",
+        "size": 4787417
+      },
+      "kinora_0.9.0_x64-setup.exe": {
+        "digest": "sha256:6cc7adbac90ee7cec7138a9e4a26c9e731bdf2f16ec3472e613266a3010eb2fe",
+        "size": 1876805
+      },
+      "kinora_0.9.0_x64-setup.exe.sig": {
+        "digest": "sha256:c8447fad6c534c18c0d915c00b84882be0f9357b3a01fbcc4d4f19127f58bafa",
+        "size": 436
+      },
+      "latest.json": {
+        "digest": "sha256:ff95eabcb9220efeca22bcb676ae6904ccb73be31da3dc97c6e5ec6a4d3ab44e",
+        "size": 5070
+      }
+    },
+    "tag": "kinora-v0.9.0"
+  },
+  "446730926": {
+    "assets": {
+      "SHA256SUMS.txt": {
+        "digest": "sha256:8eb2821a0235bd650f268b4e59430469d9535534e152f6f74c083dd52b8eca18",
+        "size": 195
+      },
+      "g1-automation-validation.json": {
+        "digest": "sha256:4be7d07c96eab071123544c038b45f2e4853b860344330f4336a6b3cde69f5d0",
+        "size": 368
+      },
+      "kinora-server-g1-0.10.0-rc.1.zip": {
+        "digest": "sha256:779fc8c3f990700bbd263eefe474b3883666209a77635c7447b610aa5ea980f3",
+        "size": 185801
+      }
+    },
+    "tag": "kinora-server-v0.10.0-rc.1"
+  }
+}

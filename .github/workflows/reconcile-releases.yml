@@ -1,0 +1,42 @@
+name: Reconcile published Kinora releases
+on:
+  release:
+    types: [published, edited]
+  schedule:
+    - cron: '3-58/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Compare current releases without removing assets or creating issues
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: kinora-publication
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: github.repository == 'PoirotJin/kinora'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+      - name: Check all public assets against trusted records
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [[ "$DRY_RUN" == true ]]; then
+            python3 tools/reconcile_releases.py "$GH_REPO" --dry-run
+          else
+            python3 tools/reconcile_releases.py "$GH_REPO"
+          fi
