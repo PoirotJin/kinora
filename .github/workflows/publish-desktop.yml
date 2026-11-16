@@ -8,6 +8,9 @@ on:
       candidate_artifact:
         description: 'Private MotionFarm Actions artifact ID (requires KINORA_BUILD_READ_TOKEN)'
         required: false
+      candidate_draft:
+        description: 'ID of the non-public kinora-staging-<version> Release containing candidate.zip'
+        required: false
       candidate_url:
         description: 'Alternative HTTPS URL for the exact release-candidate ZIP'
         required: false
@@ -39,13 +42,16 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
+    if: github.repository == 'PoirotJin/kinora' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ inputs.version }}
       CANDIDATE_ARTIFACT: ${{ inputs.candidate_artifact }}
+      CANDIDATE_DRAFT: ${{ inputs.candidate_draft }}
       CANDIDATE_URL: ${{ inputs.candidate_url }}
       CANDIDATE_SHA256: ${{ inputs.candidate_sha256 }}
       SERVER_FROM: ${{ inputs.server_from }}
@@ -58,6 +64,7 @@ jobs:
           persist-credentials: false
       - name: Download the candidate and source archives
         env:
+          GH_TOKEN: ${{ github.token }}
           BUILD_READ_TOKEN: ${{ secrets.KINORA_BUILD_READ_TOKEN }}
         run: |
           set -euo pipefail
@@ -83,8 +90,16 @@ jobs:
             fi
           }
           if [ -n "$CANDIDATE_ARTIFACT" ]; then
-            [[ -z "$CANDIDATE_URL" && "$CANDIDATE_ARTIFACT" =~ ^[0-9]+$ && -n "$BUILD_READ_TOKEN" ]]
+            [[ -z "$CANDIDATE_URL" && -z "$CANDIDATE_DRAFT" && "$CANDIDATE_ARTIFACT" =~ ^[0-9]+$ && -n "$BUILD_READ_TOKEN" ]]
             GH_TOKEN="$BUILD_READ_TOKEN" gh api               "repos/PoirotJin/MotionFarm/actions/artifacts/$CANDIDATE_ARTIFACT/zip" > candidate.zip
+          elif [ -n "$CANDIDATE_DRAFT" ]; then
+            [[ -z "$CANDIDATE_URL" && "$CANDIDATE_DRAFT" =~ ^[0-9]+$ ]]
+            draft=$(gh api "repos/$GH_REPO/releases/$CANDIDATE_DRAFT")
+            jq -e --arg tag "kinora-staging-$VERSION" '.draft == true and .tag_name == $tag' <<< "$draft" >/dev/null
+            asset=$(gh api "repos/$GH_REPO/releases/$CANDIDATE_DRAFT/assets?per_page=100" \
+              | jq -er --arg digest "sha256:$CANDIDATE_SHA256" \
+                'select(length == 1) | .[0] | select(.name == "candidate.zip" and .state == "uploaded" and .digest == $digest) | .id')
+            gh api "repos/$GH_REPO/releases/assets/$asset" -H 'Accept: application/octet-stream' > candidate.zip
           else
             [[ -n "$CANDIDATE_URL" ]]
             download "$CANDIDATE_URL" candidate.zip
@@ -147,7 +162,7 @@ jobs:
           gh api "repos/$GH_REPO/git/matching-refs/tags/$tag" \
             | jq -e --arg ref "refs/tags/$tag" 'all(.[]; .ref != $ref)' >/dev/null
           gh release create "$tag" dist/* --draft --target "$TARGET" \
-            --title "Kinora $VERSION" --notes "首次启动请填写你的 Kinora 服务地址。应用内更新由此 GitHub 仓库提供。"
+            --title "Kinora $VERSION" --notes "首次启动可填写 Kinora 服务地址。正常更新会沿用本机已保存的地址。应用内更新由此 GitHub 仓库提供。"
           draft=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
             | jq -er --arg tag "$tag" --arg target "$TARGET" \
               '[.[][] | select(.tag_name == $tag and .target_commitish == $target and .draft)] | select(length == 1) | .[0].id')
