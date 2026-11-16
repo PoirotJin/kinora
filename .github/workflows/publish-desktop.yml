@@ -9,7 +9,7 @@ on:
         description: 'Private MotionFarm Actions artifact ID (requires KINORA_BUILD_READ_TOKEN)'
         required: false
       candidate_draft:
-        description: 'ID of the non-public kinora-staging-<version> Release containing candidate.zip'
+        description: 'ID of the non-public kinora-staging-<version> Release containing candidate.zip and optionally server source'
         required: false
       candidate_url:
         description: 'Alternative HTTPS URL for the exact release-candidate ZIP'
@@ -28,8 +28,14 @@ on:
       server_zip_url:
         description: 'Optional HTTPS URL for a new server source ZIP, instead of carry-forward'
         required: false
+      staged_server_sha256:
+        description: 'SHA-256 of kinora-server-<version>.zip in the same staging draft, if supplied'
+        required: false
       gadget_zip_url:
         description: 'Optional HTTPS URL for a new Gadget source ZIP, instead of carry-forward'
+        required: false
+      release_notes:
+        description: 'Optional release notes. Inspected for disclosures before publication.'
         required: false
       verify_only:
         description: 'Run all checks, including Ubuntu upgrades, without publishing'
@@ -60,6 +66,7 @@ jobs:
       SERVER_FROM: ${{ inputs.server_from }}
       GADGET_FROM: ${{ inputs.gadget_from }}
       SERVER_URL: ${{ inputs.server_zip_url }}
+      STAGED_SERVER_SHA256: ${{ inputs.staged_server_sha256 }}
       GADGET_URL: ${{ inputs.gadget_zip_url }}
     steps:
       - uses: actions/checkout@v4
@@ -111,17 +118,36 @@ jobs:
             [[ -z "$CANDIDATE_URL" && "$CANDIDATE_DRAFT" =~ ^[0-9]+$ ]]
             draft=$(gh api "repos/$GH_REPO/releases/$CANDIDATE_DRAFT")
             jq -e --arg tag "kinora-staging-$VERSION" '.draft == true and .tag_name == $tag' <<< "$draft" >/dev/null
-            asset=$(gh api "repos/$GH_REPO/releases/$CANDIDATE_DRAFT/assets?per_page=100" \
-              | jq -er --arg digest "sha256:$CANDIDATE_SHA256" \
-                'select(length == 1) | .[0] | select(.name == "candidate.zip" and .state == "uploaded" and .digest == $digest) | .id')
+            assets=$(gh api "repos/$GH_REPO/releases/$CANDIDATE_DRAFT/assets?per_page=100" --paginate --slurp | jq 'add')
+            staging_asset() {
+              jq -er --arg name "$1" --arg digest "sha256:$2" \
+                '[.[] | select(.name == $name and .state == "uploaded" and .digest == $digest)] | select(length == 1) | .[0].id' <<< "$assets"
+            }
+            expected=1
+            if [ -n "$STAGED_SERVER_SHA256" ]; then
+              [[ -z "$SERVER_URL" && "$STAGED_SERVER_SHA256" =~ ^[a-f0-9]{64}$ ]]
+              expected=2
+            fi
+            jq -e --argjson count "$expected" 'length == $count' <<< "$assets" >/dev/null
+            asset=$(staging_asset candidate.zip "$CANDIDATE_SHA256")
             gh api "repos/$GH_REPO/releases/assets/$asset" -H 'Accept: application/octet-stream' > candidate.zip
+            if [ -n "$STAGED_SERVER_SHA256" ]; then
+              server_file="kinora-server-$VERSION.zip"
+              asset=$(staging_asset "$server_file" "$STAGED_SERVER_SHA256")
+              gh api "repos/$GH_REPO/releases/assets/$asset" -H 'Accept: application/octet-stream' > "sources/$server_file"
+              printf '%s  %s\n' "$STAGED_SERVER_SHA256" "sources/$server_file" | sha256sum --check --status
+            fi
           else
             [[ -n "$CANDIDATE_URL" ]]
             download "$CANDIDATE_URL" candidate.zip
           fi
           unset BUILD_READ_TOKEN
           echo "CANDIDATE_SHA256=$CANDIDATE_SHA256" >> "$GITHUB_ENV"
-          source_zip "$SERVER_URL" "$SERVER_FROM" server
+          if [ -z "$STAGED_SERVER_SHA256" ]; then
+            source_zip "$SERVER_URL" "$SERVER_FROM" server
+          else
+            [[ -n "$CANDIDATE_DRAFT" ]]
+          fi
           source_zip "$GADGET_URL" "$GADGET_FROM" gadget
       - name: Install release inspection tools
         run: bash tools/install_release_tools.sh
@@ -168,6 +194,9 @@ jobs:
           path: dist
       - name: Create a private draft from the verified assets
         id: draft
+        env:
+          KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
           set -euo pipefail
           (cd dist && sha256sum -c SHA256SUMS.txt)
@@ -176,8 +205,11 @@ jobs:
           tag="kinora-v$VERSION"
           gh api "repos/$GH_REPO/git/matching-refs/tags/$tag" \
             | jq -e --arg ref "refs/tags/$tag" 'all(.[]; .ref != $ref)' >/dev/null
+          printf '%s\n' "Kinora $VERSION" > release-title.txt
+          printf '%s\n' "${RELEASE_NOTES:-首次启动可填写 Kinora 服务地址。正常更新会沿用本机已保存的地址。应用内更新由此 GitHub 仓库提供。}" > release-notes.txt
+          PYTHONPATH=tools python3 -c 'from pathlib import Path; from release_gate import inspect; inspect(Path("release-title.txt")); inspect(Path("release-notes.txt"))'
           gh release create "$tag" dist/* --draft --target "$TARGET" \
-            --title "Kinora $VERSION" --notes "首次启动可填写 Kinora 服务地址。正常更新会沿用本机已保存的地址。应用内更新由此 GitHub 仓库提供。"
+            --title "$(cat release-title.txt)" --notes-file release-notes.txt
           draft=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
             | jq -er --arg tag "$tag" --arg target "$TARGET" \
               '[.[][] | select(.tag_name == $tag and .target_commitish == $target and .draft)] | select(length == 1) | .[0].id')
