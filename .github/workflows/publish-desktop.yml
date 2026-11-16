@@ -96,7 +96,7 @@ jobs:
       - name: Install release inspection tools
         run: bash tools/install_release_tools.sh
       - name: Test the release gate
-        run: python3 -m unittest discover -s tools -p test_release_gate.py
+        run: python3 -m unittest discover -s tools -p 'test_release_*.py'
       - name: Unpack and gate all release assets
         env:
           KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
@@ -119,6 +119,9 @@ jobs:
       VERSION: ${{ inputs.version }}
       TARGET: ${{ github.sha }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: verified-public-assets
@@ -139,6 +142,15 @@ jobs:
               raise SystemExit('The GitHub updater requires a higher version')
           PY
           tag="kinora-v$VERSION"
+          gh api "repos/$GH_REPO/git/matching-refs/tags/$tag" \
+            | jq -e --arg ref "refs/tags/$tag" 'all(.[]; .ref != $ref)' >/dev/null
           gh release create "$tag" dist/* --draft --target "$TARGET" \
             --title "Kinora $VERSION" --notes "首次启动请填写你的 Kinora 服务地址。应用内更新由此 GitHub 仓库提供。"
-          gh release edit "$tag" --draft=false --latest
+          draft=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
+            | jq -er --arg tag "$tag" --arg target "$TARGET" \
+              '[.[][] | select(.tag_name == $tag and .target_commitish == $target and .draft)] | select(length == 1) | .[0].id')
+          gh api "repos/$GH_REPO/releases/$draft/assets?per_page=100" --paginate --slurp \
+            | jq 'add' > draft-assets.json
+          python3 tools/verify_release_draft.py dist draft-assets.json
+          gh api "repos/$GH_REPO/releases/$draft" -X PATCH -F draft=false -f make_latest=true \
+            | jq -e '.draft == false and .immutable == true'

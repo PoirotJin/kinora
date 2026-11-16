@@ -18,7 +18,7 @@ jobs:
         with:
           persist-credentials: false
       - run: bash tools/install_release_tools.sh
-      - run: python3 -m unittest discover -s tools -p test_release_gate.py
+      - run: python3 -m unittest discover -s tools -p 'test_release_*.py'
       - name: Verify real signed installers and update packages without publishing
         if: github.event_name == 'push'
         env:
