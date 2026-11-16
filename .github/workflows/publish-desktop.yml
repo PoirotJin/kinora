@@ -32,7 +32,7 @@ on:
         description: 'Optional HTTPS URL for a new Gadget source ZIP, instead of carry-forward'
         required: false
       verify_only:
-        description: 'Stop after validating the complete release candidate'
+        description: 'Run all checks, including Ubuntu upgrades, without publishing'
         type: boolean
         default: false
 permissions:
@@ -47,6 +47,9 @@ jobs:
       contents: write
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    outputs:
+      baseline_tag: ${{ steps.baseline.outputs.tag }}
+      baseline_id: ${{ steps.baseline.outputs.id }}
     env:
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ inputs.version }}
@@ -62,6 +65,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Pin the current public stable release
+        id: baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/$GH_REPO/releases/latest")
+          tag=$(jq -er 'select(.draft == false and .prerelease == false) | .tag_name' <<< "$release")
+          id=$(jq -er '.id' <<< "$release")
+          [[ "$tag" =~ ^kinora-v[0-9]+\.[0-9]+\.[0-9]+$ && "$id" =~ ^[0-9]+$ ]]
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
       - name: Download the candidate and source archives
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,9 +137,16 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 3
-  publish:
-    if: ${{ !inputs.verify_only && github.ref == 'refs/heads/main' }}
+  ubuntu-upgrade:
     needs: verify
+    uses: ./.github/workflows/ubuntu-update.yml
+    with:
+      baseline_tag: ${{ needs.verify.outputs.baseline_tag }}
+      target_version: ${{ inputs.version }}
+      artifact_name: verified-public-assets
+  publish:
+    if: ${{ !inputs.verify_only && github.ref == 'refs/heads/main' && needs.ubuntu-upgrade.result == 'success' }}
+    needs: [verify, ubuntu-upgrade]
     runs-on: ubuntu-24.04
     environment: kinora-release-signing
     permissions:
@@ -134,6 +156,8 @@ jobs:
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ inputs.version }}
       TARGET: ${{ github.sha }}
+      BASELINE_TAG: ${{ needs.verify.outputs.baseline_tag }}
+      BASELINE_ID: ${{ needs.verify.outputs.baseline_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -147,17 +171,8 @@ jobs:
         run: |
           set -euo pipefail
           (cd dist && sha256sum -c SHA256SUMS.txt)
-          latest=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)
-          python3 - "$latest" "$VERSION" <<'PY'
-          import re, sys
-          def version(value):
-              match = re.fullmatch(r'(?:kinora-v)?([0-9]+)\.([0-9]+)\.([0-9]+)', value)
-              if not match:
-                  raise SystemExit('Unexpected release version')
-              return tuple(map(int, match.groups()))
-          if not version(sys.argv[1]) < version(sys.argv[2]):
-              raise SystemExit('The GitHub updater requires a higher version')
-          PY
+          gh api "repos/$GH_REPO/releases/latest" \
+            | jq -e --arg tag "$BASELINE_TAG" --argjson id "$BASELINE_ID" '.tag_name == $tag and .id == $id' >/dev/null
           tag="kinora-v$VERSION"
           gh api "repos/$GH_REPO/git/matching-refs/tags/$tag" \
             | jq -e --arg ref "refs/tags/$tag" 'all(.[]; .ref != $ref)' >/dev/null
@@ -181,5 +196,7 @@ jobs:
           gh api "repos/$GH_REPO/releases/$DRAFT_ID/assets?per_page=100" --paginate --slurp \
             | jq 'add' > draft-assets.json
           python3 tools/verify_release_draft.py dist draft-assets.json
+          gh api "repos/$GH_REPO/releases/latest" \
+            | jq -e --arg tag "$BASELINE_TAG" --argjson id "$BASELINE_ID" '.tag_name == $tag and .id == $id' >/dev/null
           gh api "repos/$GH_REPO/releases/$DRAFT_ID" -X PATCH -F draft=false -f make_latest=true \
             | jq -e '.draft == false and .immutable == true'

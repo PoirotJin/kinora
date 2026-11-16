@@ -1,0 +1,77 @@
+name: Ubuntu in-app upgrade gate
+on:
+  workflow_call:
+    inputs:
+      baseline_tag:
+        type: string
+        required: true
+      target_version:
+        type: string
+        required: true
+      artifact_name:
+        type: string
+        required: true
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    name: Ubuntu in-app upgrade (${{ matrix.package }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [deb, appimage]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: dist
+      - name: Set up a disposable Ubuntu desktop
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11 libwebkit2gtk-4.1-0 libgtk-3-0 libayatana-appindicator3-1 libegl1 libgl1-mesa-dri python3-pyatspi at-spi2-core libfuse2t64 policykit-1 fonts-noto-cjk openbox xdotool scrot
+          if [[ "$PACKAGE" == appimage ]]; then
+            sudo modprobe fuse || true
+          else
+            sudo systemctl start polkit
+            sudo tee /etc/polkit-1/rules.d/49-kinora-smoke.rules >/dev/null <<RULE
+          polkit.addRule(function(action, subject) {
+            if (action.id == "org.freedesktop.policykit.exec" &&
+                action.lookup("program") == "/usr/bin/dpkg" && subject.user == "$(id -un)") {
+              return polkit.Result.YES;
+            }
+          });
+          RULE
+            pkexec /usr/bin/dpkg --version >/dev/null
+          fi
+      - name: Install through the previous stable app and verify reconnection
+        env:
+          BASELINE_TAG: ${{ inputs.baseline_tag }}
+          TARGET_VERSION: ${{ inputs.target_version }}
+          PACKAGE: ${{ matrix.package }}
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GTK_MODULES: atk-bridge
+          NO_AT_BRIDGE: '0'
+        run: |
+          set -euo pipefail
+          [[ "$BASELINE_TAG" =~ ^kinora-v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          mkdir -p update-smoke
+          xvfb-run -a -s '-screen 0 1680x1050x24' dbus-run-session -- bash -euc '
+            openbox >update-smoke/openbox.log 2>&1 &
+            /usr/bin/python3 tools/ubuntu_update/smoke.py --package "$1" --baseline "$2" \
+              --target "$3" --candidate-dir dist
+          ' smoke "$PACKAGE" "${BASELINE_TAG#kinora-v}" "$TARGET_VERSION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ubuntu-update-evidence-${{ matrix.package }}
+          path: update-smoke/
+          retention-days: 14

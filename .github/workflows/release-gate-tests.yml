@@ -1,9 +1,9 @@
 name: Release gate checks
 on:
   push:
-    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
+    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/ubuntu-update.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
   pull_request:
-    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
+    paths: ['tools/**', '.github/workflows/publish-desktop.yml', '.github/workflows/ubuntu-update.yml', '.github/workflows/reconcile-releases.yml', '.github/workflows/release-gate-tests.yml']
 permissions:
   contents: read
 jobs:
@@ -32,3 +32,28 @@ jobs:
           (cd fixture && zip -q -0 ../candidate.zip *)
           digest=$(sha256sum candidate.zip | cut -d ' ' -f 1)
           python3 tools/prepare_release.py 0.9.0 candidate.zip "$digest" verified sources/*.zip
+
+  ubuntu-fixture:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: PoirotJin/kinora
+    steps:
+      - name: Stage the published 0.9.1 reference update
+        run: |
+          gh release download kinora-v0.9.1 -p latest.json -p SHA256SUMS.txt             -p 'kinora_0.9.1_amd64.deb' -p 'kinora-0.9.1-linux-x86_64.AppImage' -D fixture-update
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-ubuntu-reference-update
+          path: fixture-update/
+          if-no-files-found: error
+          retention-days: 3
+  ubuntu-upgrade:
+    needs: ubuntu-fixture
+    uses: ./.github/workflows/ubuntu-update.yml
+    with:
+      baseline_tag: kinora-v0.9.0
+      target_version: "0.9.1"
+      artifact_name: signed-ubuntu-reference-update
