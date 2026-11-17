@@ -64,14 +64,12 @@ jobs:
           set -euo pipefail
           [[ "$BASELINE_TAG" =~ ^kinora-v[0-9]+\.[0-9]+\.[0-9]+$ ]]
           mkdir -p update-smoke
-          xvfb-run -a -s '-screen 0 1680x1050x24' dbus-run-session -- bash -euc '
+          if ! xvfb-run -a -s '-screen 0 1680x1050x24' dbus-run-session -- bash -euc '
             openbox >update-smoke/openbox.log 2>&1 &
             /usr/bin/python3 tools/ubuntu_update/smoke.py --package "$1" --baseline "$2" \
               --target "$3" --candidate-dir dist
-          ' smoke "$PACKAGE" "${BASELINE_TAG#kinora-v}" "$TARGET_VERSION"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ubuntu-update-evidence-${{ matrix.package }}
-          path: update-smoke/
-          retention-days: 14
+          ' smoke "$PACKAGE" "${BASELINE_TAG#kinora-v}" "$TARGET_VERSION" >update-smoke/smoke.log 2>&1; then
+            echo '::error::Ubuntu in-app upgrade check failed.'
+            exit 1
+          fi
+          echo 'Ubuntu in-app upgrade check passed.'
