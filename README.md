@@ -16,6 +16,8 @@ Kinora 将动作生成、检索、预览、重定向和精修放在同一个工�
 
 ## 下载
 
+**macOS 测试版：[0.11.0-beta 通用安装包](https://github.com/PoirotJin/kinora/releases/download/kinora-v0.11.0-beta/kinora_0.11.0-beta_universal.dmg)** · [测试版说明及校验文件](https://github.com/PoirotJin/kinora/releases/tag/kinora-v0.11.0-beta)。支持 Apple 芯片与 Intel，macOS 11+；包含统一动作工作区、多标签和任务恢复。首次启动填写团队提供的服务器地址。测试包未经 Apple 公证；此预发布不替换正式版与稳定更新源。
+
 **桌面端已编译完成，下载后即可安装，无需自行构建。** 安装后连接你的 Kinora 服务器并登录；生成与重定向计算由服务端承担。
 
 | 下载 | 版本 | 适用环境 |

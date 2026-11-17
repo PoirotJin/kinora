@@ -28,7 +28,7 @@ def inventory(directory):
 
 
 def sign(directory, repo, version, release_id, commit, private_key, public_key=VERIFY_KEY):
-    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version) or not re.fullmatch(r'[a-f0-9]{40}', commit):
+    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-beta(?:\.[1-9][0-9]*)?)?', version) or not re.fullmatch(r'[a-f0-9]{40}', commit):
         raise ValueError('Invalid version or commit')
     record = {
         'schema': 1,

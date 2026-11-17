@@ -1,0 +1,98 @@
+name: Publish macOS beta
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Prerelease version, e.g. 0.11.0-beta'
+        required: true
+      candidate_draft:
+        description: 'Private kinora-staging-<version> draft release ID'
+        required: true
+      candidate_sha256:
+        description: 'SHA-256 of candidate.zip'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: kinora-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'PoirotJin/kinora' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: kinora-release-signing
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ inputs.version }}
+      DRAFT: ${{ inputs.candidate_draft }}
+      CHECKSUM: ${{ inputs.candidate_sha256 }}
+      TARGET: ${{ github.sha }}
+      KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the exact private candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta(\.[1-9][0-9]*)?$ ]]
+          [[ "$DRAFT" =~ ^[0-9]+$ && "$CHECKSUM" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GH_REPO/releases/$DRAFT" > draft.json
+          jq -e --arg tag "kinora-staging-$VERSION" '.draft == true and .tag_name == $tag' draft.json >/dev/null
+          asset=$(jq -er --arg digest "sha256:$CHECKSUM" \
+            '.assets | select(length == 1) | .[0] | select(.name == "candidate.zip" and .state == "uploaded" and .digest == $digest) | .id' draft.json)
+          gh api "repos/$GH_REPO/releases/assets/$asset" -H 'Accept: application/octet-stream' > candidate.zip
+          printf '%s  candidate.zip\n' "$CHECKSUM" | sha256sum --check --status
+      - name: Install disclosure inspection tools
+        run: bash tools/install_release_tools.sh
+      - name: Test release protection
+        run: python3 -m unittest discover -s tools -p 'test_release_*.py'
+      - name: Inspect both architectures and embedded frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > install.txt <<'EOF'
+          Kinora macOS Beta
+
+          macOS 11 or later. Universal: Apple silicon and Intel.
+          Open the DMG and drag kinora into Applications. Quit an older copy before installing.
+          Enter your team's server address on first launch and sign in with your existing account.
+          This test application has an ad-hoc signature and is not Apple notarized.
+          If macOS blocks first launch, verify the download source and allow it in Privacy & Security.
+          Local frontend and Rust regression tests passed; interactive cross-Mac acceptance is pending.
+          This macOS-only prerelease does not change the stable release or updater feed.
+          EOF
+          python3 tools/prepare_macos_beta.py "$VERSION" candidate.zip "$CHECKSUM" dist install.txt
+          printf 'Kinora %s · macOS Beta\n' "$VERSION" > release-title.txt
+          printf 'macOS 通用测试版，支持 Apple 芯片和 Intel，要求 macOS 11+。\n\n首次启动填写团队提供的服务器地址，再使用现有账号登录。包含统一动作工作区、多标签与任务恢复，以及编辑、拼接和场景结果重定向。功能取决于所连接服务端。\n\n安装包已检查双架构、签名完整性及嵌入前端，不含预配置的业务服务器地址。测试包未经 Apple 公证，跨 Mac 实际业务流程待测试。此预发布不替换正式版与稳定更新源。\n' > release-notes.txt
+          python3 tools/release_gate.py release-title.txt release-notes.txt
+      - name: Create draft with verified assets
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "kinora-v$VERSION" dist/* --draft --prerelease --target "$TARGET" \
+            --title "$(cat release-title.txt)" --notes-file release-notes.txt
+          id=$(gh api "repos/$GH_REPO/releases/tags/kinora-v$VERSION" --jq .id)
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+      - name: Sign the existing trusted gate record
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+          KINORA_RELEASE_RECORD_KEY: ${{ secrets.KINORA_RELEASE_RECORD_KEY }}
+        run: python3 tools/release_record.py dist "$GH_REPO" "$VERSION" "$RELEASE_ID" "$TARGET"
+      - name: Verify GitHub attachments and publish immutable prerelease
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "kinora-v$VERSION" dist/KINORA-RELEASE-GATE.json dist/KINORA-RELEASE-GATE.json.sig
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID/assets?per_page=100" > remote-assets.json
+          python3 tools/verify_release_draft.py dist remote-assets.json
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID" -X PATCH -F draft=false -F prerelease=true -f make_latest=false \
+            | jq -e '.draft == false and .prerelease == true and .immutable == true'

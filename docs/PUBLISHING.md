@@ -1,5 +1,13 @@
 # 发布 Kinora
 
+## macOS Beta
+
+macOS 单平台测试版使用 `Publish macOS beta`，从 `main` 运行。版本必须为 `x.y.z-beta` 或 `x.y.z-beta.N`。将已经构建的通用 DMG 和其完整 `renderer-assets.json` 放入 `candidate.zip`，只上传到 `kinora-staging-<version>` 草稿，再提供草稿 ID 和 ZIP 的 SHA-256。
+
+流程沿用受保护 IP/凭据检查，解包核查两个架构的程序及内嵌前端，使用现有受保护环境签署发布记录，并逐项核对 GitHub 附件名称、大小和 SHA-256 后公开不可变预发布。预发布不包含稳定更新清单，不改变当前正式版，不携带团队服务器地址。客户端代码继续保存在既有源码仓库；公开入口仓库的源码分发范围保持不变。
+
+## 正式版
+
 1. 在 MotionFarm 的 `codex/kinora-cubic-090` 分支更新桌面版本。Desktop installers 会构建三平台安装包，沿用现有 Tauri 更新密钥签名，并对 Windows 和 Linux 执行安装及升级验证。成功后下载 `kinora-public-candidate-<version>` 的原始 Actions ZIP，保留工作流摘要中的 SHA-256。
 2. 在公开 Kinora 仓库的 Actions 中，从 `main` 运行 **Publish desktop release**。指定新版本、原始候选 ZIP 的 SHA-256，以及它的 HTTPS 下载地址。也可配置仅对私有 MotionFarm 有 Actions 读取权限的 `KINORA_BUILD_READ_TOKEN`，用摘要中的 Actions artifact ID 直接读取。填写新的服务端或 Gadget 源码 ZIP 地址，或从指定的公开版本沿用。
 3. 工作流会解包检查源码及其中的嵌套压缩包（含 Zstandard）、各平台安装包、更新包和程序内压缩的界面资源。发现受保护 IP、Qwen/Gadget 明文凭据模式、无法读出的安装包或不匹配的更新签名会使任务失败。两个 IP 从当前已配置的 Actions Secret `KINORA_BLOCKED_IPS` 读取，缺少配置也会阻止发布。失败日志不会打印匹配项。勾选 `verify_only` 可以试跑同一套检查而不发布。
