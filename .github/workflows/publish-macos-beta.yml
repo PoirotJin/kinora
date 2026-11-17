@@ -78,7 +78,9 @@ jobs:
           set -euo pipefail
           gh release create "kinora-v$VERSION" dist/* --draft --prerelease --target "$TARGET" \
             --title "$(cat release-title.txt)" --notes-file release-notes.txt
-          id=$(gh api "repos/$GH_REPO/releases/tags/kinora-v$VERSION" --jq .id)
+          id=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
+            | jq -er --arg tag "kinora-v$VERSION" --arg target "$TARGET" \
+              '[.[][] | select(.draft == true and .tag_name == $tag and .target_commitish == $target)] | select(length == 1) | .[0].id')
           echo "id=$id" >> "$GITHUB_OUTPUT"
       - name: Sign the existing trusted gate record
         env:
