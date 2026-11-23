@@ -1,0 +1,132 @@
+name: Publish Ubuntu beta
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Prerelease version, e.g. 1.0.0-beta.1'
+        required: true
+      candidate_draft:
+        description: 'Private kinora-staging-<version>-ubuntu draft release ID'
+        required: true
+      candidate_sha256:
+        description: 'SHA-256 of candidate.zip'
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: kinora-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'PoirotJin/kinora' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: kinora-release-signing
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ inputs.version }}
+      DRAFT: ${{ inputs.candidate_draft }}
+      CHECKSUM: ${{ inputs.candidate_sha256 }}
+      TARGET: ${{ github.sha }}
+      KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the exact private candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta(\.[1-9][0-9]*)?$ ]]
+          [[ "$DRAFT" =~ ^[0-9]+$ && "$CHECKSUM" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GH_REPO/releases/$DRAFT" > draft.json
+          jq -e --arg tag "kinora-staging-$VERSION-ubuntu" '.draft == true and .tag_name == $tag' draft.json >/dev/null
+          asset=$(jq -er --arg digest "sha256:$CHECKSUM" \
+            '.assets | select(length == 1) | .[0] | select(.name == "candidate.zip" and .state == "uploaded" and .digest == $digest) | .id' draft.json)
+          gh api "repos/$GH_REPO/releases/assets/$asset" -H 'Accept: application/octet-stream' > candidate.zip
+          printf '%s  candidate.zip\n' "$CHECKSUM" | sha256sum --check --status
+      - name: Install disclosure inspection tools
+        run: bash tools/install_release_tools.sh
+      - name: Test release protection
+        run: python3 -m unittest discover -s tools -p 'test_release_*.py'
+      - name: Inspect the Ubuntu package and embedded frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir dist
+          package="kinora_${VERSION}_amd64.deb"
+          PYTHONPATH=tools python3 - "$package" <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          import zipfile
+          from release_gate import inspect, read_bounded
+
+          name = sys.argv[1]
+          with zipfile.ZipFile('candidate.zip') as archive:
+              if sorted(archive.namelist()) != sorted([name, 'renderer-assets.json']):
+                  raise SystemExit('Unexpected Ubuntu candidate contents')
+              with archive.open('renderer-assets.json') as stream:
+                  renderer = json.loads(read_bounded(stream))
+              if (not isinstance(renderer, list)
+                      or not all(isinstance(path, str) and path.startswith('/') for path in renderer)
+                      or len(renderer) != len(set(renderer))
+                      or not {'/index.html', '/app.js'} <= set(renderer)):
+                  raise SystemExit('Invalid renderer inventory')
+              with archive.open(name) as stream:
+                  package = Path('dist') / name
+                  package.write_bytes(read_bounded(stream))
+          inspect(package, renderer=set(renderer))
+          PY
+          test "$(dpkg-deb -f "dist/$package" Package)" = kinora
+          test "$(dpkg-deb -f "dist/$package" Architecture)" = amd64
+          test "$(dpkg-deb -f "dist/$package" Version)" = "$VERSION"
+          printf 'Kinora %s · Ubuntu Beta\n' "$VERSION" > release-title.txt
+          cat > release-notes.txt <<'EOF'
+          Ubuntu 22.04 x86_64 prerelease. Install the downloaded .deb with apt, then start Kinora and enter your team's server address.
+
+          The package passed a fresh installation and startup smoke test in an Ubuntu 22.04 x86_64 container, including a client request and server address recovery.
+
+          This build is distributed as a manual download alongside the macOS beta.
+          EOF
+          python3 tools/release_gate.py release-title.txt release-notes.txt
+          (cd dist && sha256sum "$package" > SHA256SUMS.txt)
+      - name: Create draft with verified assets
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "kinora-v$VERSION-ubuntu" dist/* --draft --prerelease --target "$TARGET" \
+            --title "$(cat release-title.txt)" --notes-file release-notes.txt
+          # GitHub's release list can lag the successful create response.
+          # Retry discovery without relaxing draft, tag or target validation.
+          id=""
+          for attempt in 1 2 3 4 5; do
+            if id=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
+              | jq -er --arg tag "kinora-v$VERSION-ubuntu" --arg target "$TARGET" \
+                '[.[][] | select(.draft == true and .tag_name == $tag and .target_commitish == $target)] | select(length == 1) | .[0].id'); then
+              break
+            fi
+            sleep 3
+          done
+          [[ "$id" =~ ^[0-9]+$ ]]
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+      - name: Sign the existing trusted gate record
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+          KINORA_RELEASE_RECORD_KEY: ${{ secrets.KINORA_RELEASE_RECORD_KEY }}
+        run: python3 tools/release_record.py dist "$GH_REPO" "$VERSION" "$RELEASE_ID" "$TARGET" --platform ubuntu
+      - name: Verify GitHub attachments and publish immutable prerelease
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "kinora-v$VERSION-ubuntu" dist/KINORA-RELEASE-GATE.json dist/KINORA-RELEASE-GATE.json.sig
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID/assets?per_page=100" > remote-assets.json
+          python3 tools/verify_release_draft.py dist remote-assets.json
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID" -X PATCH -F draft=false -F prerelease=true -f make_latest=false \
+            | jq -e '.draft == false and .prerelease == true and .immutable == true'

@@ -27,14 +27,17 @@ def inventory(directory):
     return approved
 
 
-def sign(directory, repo, version, release_id, commit, private_key, public_key=VERIFY_KEY):
+def sign(directory, repo, version, release_id, commit, private_key, public_key=VERIFY_KEY, *, platform=None):
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-beta(?:\.[1-9][0-9]*)?)?', version) or not re.fullmatch(r'[a-f0-9]{40}', commit):
         raise ValueError('Invalid version or commit')
+    if platform is not None and (platform != 'ubuntu' or '-beta' not in version):
+        raise ValueError('Invalid platform for the release version')
+    tag = 'kinora-v' + version + (f'-{platform}' if platform else '')
     record = {
         'schema': 1,
         'repository': repo,
         'release_id': release_id,
-        'tag': 'kinora-v' + version,
+        'tag': tag,
         'commit': commit,
         'assets': inventory(directory),
     }
@@ -76,10 +79,11 @@ def main():
     parser.add_argument('version')
     parser.add_argument('release_id', type=int)
     parser.add_argument('commit')
+    parser.add_argument('--platform', choices=['ubuntu'])
     args = parser.parse_args()
     try:
         sign(args.directory, args.repo, args.version, args.release_id, args.commit,
-             os.environ['KINORA_RELEASE_RECORD_KEY'])
+             os.environ['KINORA_RELEASE_RECORD_KEY'], platform=args.platform)
     except (KeyError, OSError, ValueError, subprocess.SubprocessError):
         raise SystemExit('Publication blocked: could not sign the gate record') from None
 
