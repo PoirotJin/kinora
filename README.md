@@ -16,9 +16,12 @@ Kinora brings motion generation, search, preview, retargeting, and refinement in
 
 ## Downloads
 
-**macOS beta:** [Kinora 1.0.0-beta.1 universal DMG](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.1/kinora_1.0.0-beta.1_universal.dmg) · [Release notes](https://github.com/PoirotJin/kinora/releases/tag/kinora-v1.0.0-beta.1) · [SHA-256 checksums](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.1/SHA256SUMS.txt)
+**1.0.0-beta.2 prereleases:**
+- **macOS beta:** [Kinora 1.0.0-beta.2 universal DMG](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2/kinora_1.0.0-beta.2_universal.dmg) · [Release notes](https://github.com/PoirotJin/kinora/releases/tag/kinora-v1.0.0-beta.2) · [SHA-256 checksums](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2/SHA256SUMS.txt)
+- **Ubuntu beta:** [Kinora 1.0.0-beta.2 amd64 DEB](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2-ubuntu/kinora_1.0.0-beta.2_amd64.deb) · [Release notes](https://github.com/PoirotJin/kinora/releases/tag/kinora-v1.0.0-beta.2-ubuntu) · [SHA-256 checksums](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2-ubuntu/SHA256SUMS.txt)
+- **Server beta:** [Kinora Server 1.0.0-beta.2 ZIP](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2-server/kinora-server-1.0.0-beta.2.zip) · [Release notes](https://github.com/PoirotJin/kinora/releases/tag/kinora-v1.0.0-beta.2-server) · [SHA-256 checksums](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.2-server/SHA256SUMS.txt)
 
-The beta supports Apple silicon and Intel Macs running macOS 11 or later. It includes a unified motion workspace, multiple tabs, task recovery, and retargeting for motion editing, splicing, and scene generation results. Available features depend on the connected server. This prerelease ships without Apple notarization and is distributed separately from the stable update feed.
+The desktop betas include unified multi-tab workspace, video-to-motion isolation, batch export for personal assets, task recovery, and retargeting for edited, spliced, and scene results. The macOS universal DMG supports Apple silicon and Intel Macs on macOS 11+ (ad-hoc signed, not Apple notarized); the Ubuntu DEB targets Ubuntu 22.04+ x86_64. Available features depend on the connected server. These prereleases are distributed separately from the stable update feed.
 
 The stable desktop installers are ready to use. After installation, connect to your Kinora server and sign in. The server handles generation and retargeting.
 
