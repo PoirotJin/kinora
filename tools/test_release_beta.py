@@ -63,3 +63,30 @@ class BetaTests(unittest.TestCase):
             self.assertEqual(json.loads(record)['tag'], 'kinora-v0.11.0-beta')
             self.assertTrue(signature_valid(record, signature, public))
             self.assertFalse(signature_valid(record.replace(b'0.11.0-beta', b'0.12.0-beta'), signature, public))
+
+    def test_server_beta_package_and_gate_record_work(self):
+        from package_server import build as build_server
+        with tempfile.TemporaryDirectory() as temporary, patch.dict('os.environ', {'KINORA_BLOCKED_IPS': '192.0.2.77,198.51.100.77'}):
+            root = Path(temporary)
+            source = root / 'source'
+            source.mkdir()
+            (source / 'VERSION').write_text('1.0.0-beta.2')
+            (source / 'assets.lock.json').write_text('{"files":[]}')
+            (source / 'README.md').write_text('Server beta docs\n')
+            archive = root / 'kinora-server-1.0.0-beta.2.zip'
+            build_server(source, archive)
+            with zipfile.ZipFile(archive) as zf:
+                self.assertIn('kinora-server-1.0.0-beta.2/VERSION', zf.namelist())
+                self.assertIn('kinora-server-1.0.0-beta.2/SOURCE_MANIFEST.json', zf.namelist())
+            private, public = root / 'private.pem', root / 'public.pem'
+            subprocess.run(['openssl', 'genpkey', '-algorithm', 'ED25519', '-out', str(private)], check=True)
+            subprocess.run(['openssl', 'pkey', '-in', str(private), '-pubout', '-out', str(public)], check=True)
+            dist = root / 'dist'
+            dist.mkdir()
+            (dist / 'kinora-server-1.0.0-beta.2.zip').write_bytes(archive.read_bytes())
+            sign(dist, 'PoirotJin/kinora', '1.0.0-beta.2', 77, 'b' * 40, private.read_text(), public, platform='server')
+            record, signature = (dist / MANIFEST).read_bytes(), (dist / SIGNATURE).read_bytes()
+            self.assertEqual(json.loads(record)['tag'], 'kinora-v1.0.0-beta.2-server')
+            self.assertTrue(signature_valid(record, signature, public))
+            with self.assertRaisesRegex(ValueError, 'Invalid platform'):
+                sign(dist, 'PoirotJin/kinora', '1.0.0', 77, 'b' * 40, private.read_text(), public, platform='server')

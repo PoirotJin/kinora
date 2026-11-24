@@ -10,7 +10,7 @@ def build(source,output):
     source=source.resolve();output=output.resolve()
     if output.is_relative_to(source):raise ValueError('Output must be outside the prepared source tree')
     version=(source/'VERSION').read_text().strip()
-    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',version):raise ValueError('Invalid version')
+    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-beta(?:\.[1-9][0-9]*)?)?',version):raise ValueError('Invalid version')
     external={a['path'] for a in json.loads((source/'assets.lock.json').read_text())['files']}
     payload={}
     for p in sorted(source.rglob('*')):

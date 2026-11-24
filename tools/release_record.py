@@ -30,7 +30,7 @@ def inventory(directory):
 def sign(directory, repo, version, release_id, commit, private_key, public_key=VERIFY_KEY, *, platform=None):
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-beta(?:\.[1-9][0-9]*)?)?', version) or not re.fullmatch(r'[a-f0-9]{40}', commit):
         raise ValueError('Invalid version or commit')
-    if platform is not None and (platform != 'ubuntu' or '-beta' not in version):
+    if platform is not None and (platform not in {'ubuntu', 'server'} or '-beta' not in version):
         raise ValueError('Invalid platform for the release version')
     tag = 'kinora-v' + version + (f'-{platform}' if platform else '')
     record = {
@@ -79,7 +79,7 @@ def main():
     parser.add_argument('version')
     parser.add_argument('release_id', type=int)
     parser.add_argument('commit')
-    parser.add_argument('--platform', choices=['ubuntu'])
+    parser.add_argument('--platform', choices=['ubuntu', 'server'])
     args = parser.parse_args()
     try:
         sign(args.directory, args.repo, args.version, args.release_id, args.commit,
