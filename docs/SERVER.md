@@ -1,6 +1,6 @@
 # 服务端入门
 
-下载 [Kinora Server 1.0.0-beta.3 源码包](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.3-server/kinora-server-1.0.0-beta.3.zip)（稳定基线为 [0.5.2](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/kinora-server-0.5.2.zip)），解压后进入 `kinora-server-1.0.0-beta.3/`。包内包含完整服务端源码、Gadget 0.9.1、依赖清单、`deploy/`（含 `nginx.conf`）、`deployment/` 服务模板和验收工具。
+下载 [Kinora Server 1.0.0-beta.4 源码包](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0-beta.4-server/kinora-server-1.0.0-beta.4.zip)（稳定基线为 [0.5.2](https://github.com/PoirotJin/kinora/releases/download/kinora-server-v0.5.2/kinora-server-0.5.2.zip)），解压后进入 `kinora-server-1.0.0-beta.4/`。包内包含完整服务端源码、Gadget 0.9.1、依赖清单、`deploy/`（含 `nginx.conf`）、`deployment/` 服务模板和验收工具。
 
 ## 先启动本机服务
 
