@@ -70,14 +70,36 @@ class BetaTests(unittest.TestCase):
             root = Path(temporary)
             source = root / 'source'
             source.mkdir()
-            (source / 'VERSION').write_text('1.0.0-beta.2')
+            (source / 'VERSION').write_text('1.0.0-beta.3')
             (source / 'assets.lock.json').write_text('{"files":[]}')
             (source / 'README.md').write_text('Server beta docs\n')
-            archive = root / 'kinora-server-1.0.0-beta.2.zip'
+            (source / 'scripts').mkdir()
+            (source / 'scripts/build_gadget.py').write_text("VERSION='0.9.1'\n")
+            (source / 'scripts/fixtures').mkdir()
+            import io
+            fixture_buf = io.BytesIO()
+            with zipfile.ZipFile(fixture_buf, 'w') as fz:
+                fz.writestr('sample.txt', 'fixture')
+            (source / 'scripts/fixtures/m000096vn-semantic.npz').write_bytes(fixture_buf.getvalue())
+            (source / 'deploy').mkdir()
+            (source / 'deploy/nginx.conf').write_text('server_name your-kinora.example.com;\n')
+            (source / 'deployment').mkdir()
+            (source / 'deployment/kinora.service').write_text('[Unit]\n')
+            (source / 'deployment/kinora.timer').write_text('[Timer]\n')
+            (source / 'scripts/check.applescript').write_text('return 1\n')
+            archive = root / 'kinora-server-1.0.0-beta.3.zip'
             build_server(source, archive)
             with zipfile.ZipFile(archive) as zf:
-                self.assertIn('kinora-server-1.0.0-beta.2/VERSION', zf.namelist())
-                self.assertIn('kinora-server-1.0.0-beta.2/SOURCE_MANIFEST.json', zf.namelist())
+                names = set(zf.namelist())
+                self.assertIn('kinora-server-1.0.0-beta.3/VERSION', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/SOURCE_MANIFEST.json', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/deploy/nginx.conf', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/deployment/kinora.service', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/deployment/kinora.timer', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/scripts/check.applescript', names)
+                self.assertIn('kinora-server-1.0.0-beta.3/scripts/fixtures/m000096vn-semantic.npz', names)
+                manifest = json.loads(zf.read('kinora-server-1.0.0-beta.3/SOURCE_MANIFEST.json'))
+                self.assertEqual(manifest['gadget_version'], '0.9.1')
             private, public = root / 'private.pem', root / 'public.pem'
             subprocess.run(['openssl', 'genpkey', '-algorithm', 'ED25519', '-out', str(private)], check=True)
             subprocess.run(['openssl', 'pkey', '-in', str(private), '-pubout', '-out', str(public)], check=True)
