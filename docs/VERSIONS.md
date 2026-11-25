@@ -1,14 +1,14 @@
 # 版本与发布范围
 
-## 1.0.0-beta.5 / 1.0.0-beta.3 预发布
+## 1.0.0-beta.6 预发布
 
 | 组件 | 预发布版本 | 内容 |
 | --- | --- | --- |
-| macOS 桌面测试版 | 1.0.0-beta.3 | Universal DMG (`kinora-v1.0.0-beta.3`) |
-| Ubuntu 桌面测试版 | 1.0.0-beta.3 | amd64 DEB (`kinora-v1.0.0-beta.3-ubuntu`) |
-| 服务端源码测试版 | 1.0.0-beta.5 | 完整服务端源码、部署模板、计算队列与验收脚本；内含 Gadget 0.9.1 (`kinora-v1.0.0-beta.5-server`) |
+| macOS 桌面测试版 | 1.0.0-beta.6 | Universal DMG (`kinora-v1.0.0-beta.6`) |
+| Ubuntu 桌面测试版 | 1.0.0-beta.6 | amd64 DEB (`kinora-v1.0.0-beta.6-ubuntu`) |
+| 服务端源码测试版 | 1.0.0-beta.6 | 完整服务端源码、部署模板、计算队列与验收脚本；内含 Gadget 0.9.1 (`kinora-v1.0.0-beta.6-server`) |
 
-当前预发布独立于稳定更新通道（`latest.json` 当前仍为稳定线）。服务端 `1.0.0-beta.5` 在 `1.0.0-beta.4` 基础上修复了动作收集阶段对物体附着（`attachments` / 多角色 `co_carry`）场景条件（`center_m`、`trajectory`、`pelvis_offset_m`）的校验，并保留 `1.0.0-beta.4` 的多镜头视频分段拼接与质量提醒、放宽地面/交互动作提示词受理、存在轻微接缝/几何提醒时的可预览候选及 Gadget 0.9.1。桌面端保持 `1.0.0-beta.3`（包含统一多标签工作区、视频动作提取隔离、个人资产快照批量导出、机器人编辑失败头指针自动回退、编辑与场景结果重定向）。
+当前预发布独立于稳定更新通道（`latest.json` 当前仍为稳定线）。`1.0.0-beta.6` 将桌面端与网页端全部界面（我的资产、协作场景回放器、多阶段播放控制栏、输入模态页签及三维/二维视口与自定义机器人模型配色）统一至 Kinora 暖纸黑墨单色编辑设计语言，并保留统一多标签工作区、视频动作提取隔离、个人资产快照批量导出、机器人编辑失败头指针回退及编辑/场景结果重定向能力。服务端同步 `1.0.0-beta.6` 界面资产，并保留 `1.0.0-beta.4`/`1.0.0-beta.5` 全部改进（错误提示脱敏、多镜头视频分段拼接与轻微接缝/几何提醒软提醒交付、放宽地面/交互动作提示词受理、`co_carry`/`attachments` 场景条件校验修复及 Gadget 0.9.1）。
 
 ## 稳定版基线
 
@@ -18,7 +18,7 @@
 | 服务端源码 | 0.5.2 | 稳定服务端、独立人体骨架、计算队列、部署和验收工具；含 Gadget 0.15.2 |
 | 独立 Gadget | 0.15.2 | CLI / MCP 工具与断线恢复 |
 
-稳定服务端源码为 `kinora-server-0.5.2.zip`，位于 `kinora-server-v0.5.2` Release；测试服务端源码为 `kinora-server-1.0.0-beta.5.zip`，位于 `kinora-v1.0.0-beta.5-server` Release。GitHub 自动生成的 Source code ZIP 只包含下载入口仓库，请使用命名的服务端 ZIP。
+稳定服务端源码为 `kinora-server-0.5.2.zip`，位于 `kinora-server-v0.5.2` Release；测试服务端源码为 `kinora-server-1.0.0-beta.6.zip`，位于 `kinora-v1.0.0-beta.6-server` Release。GitHub 自动生成的 Source code ZIP 只包含下载入口仓库，请使用命名的服务端 ZIP。
 
 0.5.1 起服务端将人体骨架替换为 Kinora 独立数值定义，预览使用程序化骨骼和关节，不再下载外部人体骨架、蒙皮或纹理。新动作携带自身骨架信息；无内嵌骨架的动作从其存储坐标与旋转恢复并校验骨长。不一致的数据明确拒绝，不会静默改写原件。旧生成任务不会自动转为当前模型重新执行。
 
