@@ -1,0 +1,13 @@
+{
+    "test_prompts_subset": [
+        "A person jumps upward with both legs twice.#90#001",
+        "A person jumps on their right leg.#90#002",
+        "A person climbs upward, moving up the slope.#60#003",
+        "A person climbs an obstacle.#60#004",
+        "A person walks forward.#120#005",
+        "A person walks forward, moving arms and legs while looking left and right.#180#006",
+        "A person walks unsteadily, then slowly sits down.#150#007",
+        "A person turns backward 180 degrees, then walks forward.#120#008",
+        "A person walks in a catwalk style, swinging their left arm while placing their right hand on their hip.#180#009"
+    ]
+}

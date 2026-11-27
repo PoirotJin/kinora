@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kinora</title>
+<link rel="icon" type="image/png" href="assets/kinora-icon.png">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="personal-assets.css">
+<script defer src="bridge.js"></script>
+<script defer src="vendor/three.min.js"></script>
+<script defer src="motion-view.js"></script>
+<script defer src="motion-strip.js"></script>
+<script defer src="robot-view.js"></script>
+<script defer src="motion-loader.js"></script>
+<script defer src="app.js"></script>
+<script defer src="gadget.js"></script>
+<script defer src="edit-timeline.js"></script>
+<script defer src="sequence.js"></script>
+<script defer src="plan-view.js"></script>
+<script defer src="sequence-editor.js"></script>
+<script defer src="editor.js"></script>
+<script defer src="scene-presets.js"></script>
+<script defer src="scene-editor.js"></script>
+<script defer src="line-dialog.js"></script>
+<script defer src="video-motion.js"></script>
+<script defer src="workspace.js"></script>
+<script defer src="personal-assets.js"></script>
+<script defer src="downloads.js"></script>
+<script defer src="custom-robots.js"></script>
+<script defer src="robot-fk.js"></script><script defer src="robot-edit-view.js"></script><script defer src="robot-editor.js"></script></head>
+<body data-screen="connecting" data-view="library" data-stage="preview">
+<svg width="0" height="0" class="sprite" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5.5v13M16 5.5v13" stroke-width="3.2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-pane-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M9 4v16"/></symbol>
+  <symbol id="i-pane-right" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M15 4v16"/></symbol>
+</svg>
+
+<!-- Boot / offline / login share one full-window backdrop -->
+<section id="gate" class="gate" aria-live="polite" data-tauri-drag-region>
+  <div class="gate-card" id="gate-connecting">
+    <div class="wordmark large"><img class="brand-icon" src="assets/kinora-mark.png" alt="" draggable="false">kinora</div>
+    <div class="loader" aria-label="正在连接"></div>
+  </div>
+  <div class="gate-card" id="gate-offline" hidden>
+    <div class="wordmark large"><img class="brand-icon" src="assets/kinora-mark.png" alt="" draggable="false">kinora</div>
+    <p class="gate-title">无法连接云端</p>
+    <p class="gate-sub" id="offline-reason" hidden></p>
+    <div class="row center"><button class="btn primary" id="offline-retry" type="button">重新连接</button><button class="btn subtle" id="offline-server" type="button">重新填写服务器地址</button></div>
+  </div>
+  <form class="gate-card login" id="gate-login" hidden autocomplete="on">
+    <div class="wordmark large"><img class="brand-icon" src="assets/kinora-mark.png" alt="" draggable="false">kinora</div>
+    <label class="field"><span>邮箱或用户名</span><input id="login-user" name="username" autocomplete="username" required maxlength="254"></label>
+    <label class="field"><span>密码</span><input id="login-pass" name="password" type="password" autocomplete="current-password" required maxlength="256"></label>
+    <div class="remember-row"><label class="check"><input id="login-remember" type="checkbox">在本机记住账号密码</label><button class="text-btn" id="login-forget" type="button" title="从系统凭据库删除">删除已保存</button></div>
+    <p class="credential-status" id="credential-status" role="status"></p>
+    <p class="form-error" id="login-error" role="alert"></p>
+    <button class="btn primary block" id="login-submit" type="submit">登录</button>
+    <div class="row account-links"><button class="btn ghost" type="button" data-account="register">申请账号</button><button class="btn ghost" type="button" data-account="forgot">忘记密码</button></div>
+  </form>
+  <button class="btn ghost gate-settings" id="gate-settings" type="button">设置与更新</button>
+</section>
+
+<div class="shell" id="shell">
+  <!-- 1. TOP TOOLBAR -->
+  <header class="titlebar" data-tauri-drag-region>
+    <button class="icon-btn pane-toggle" id="toggle-left" type="button" aria-expanded="true" aria-label="折叠或展开左侧动作库" title="折叠或展开动作库 ( [ )"><svg><use href="#i-pane-left"/></svg></button>
+    <div class="wordmark"><img class="brand-icon" src="assets/kinora-mark.png" alt="" draggable="false">kinora</div>
+    <div class="titlebar-actions">
+      <button class="btn sm subtle" id="new-generate-btn" type="button" title="打开动作生成（按住 Alt 新建多个标签页）">＋ 新建动作<i class="nav-count" id="badge-generate" hidden></i></button>
+      <button class="btn sm subtle" id="new-scene-btn" type="button" title="打开场景动作生成" hidden>＋ 新建场景</button>
+      <button class="btn sm subtle" id="assets-open" type="button">我的资产</button>
+      <!-- Hidden semantic triggers preserved for keyboard shortcuts and module capability hooks -->
+      <nav class="nav sr-nav" aria-label="快捷功能导航" hidden>
+        <button class="nav-btn" data-nav="library" type="button">动作库</button>
+        <button class="nav-btn" data-nav="generate" type="button">生成</button>
+        <button class="nav-btn" data-nav="retarget" type="button">重定向<i class="nav-count" id="badge-retarget" hidden></i></button>
+        <button class="nav-btn" data-nav="editor" type="button">编辑修正</button>
+      </nav>
+    </div>
+    <div class="titlebar-fill" data-tauri-drag-region></div>
+    <button class="nav-btn" id="open-gadget" data-nav="gadget" type="button">Gadget 接入</button>
+    <button class="nav-btn" id="open-settings" type="button">设置<i class="nav-count dot" id="badge-update" hidden></i></button>
+    <button class="nav-btn account" id="account-chip" type="button" aria-label="账户与设置"><span id="avatar"></span></button>
+    <button class="icon-btn pane-toggle" id="toggle-right" type="button" aria-expanded="true" aria-label="折叠或展开右侧参数区" title="折叠或展开参数区 ( ] )"><svg><use href="#i-pane-right"/></svg></button>
+  </header>
+
+  <!-- 2-4. UNIFIED THREE-COLUMN WORKSPACE -->
+  <main class="workspace" id="workspace">
+    <!-- LEFT: ACTION LIBRARY -->
+    <aside class="pane ws-left" id="ws-left" aria-label="左侧动作库">
+      <button class="ws-rail" id="ws-left-rail" type="button" hidden aria-label="展开左侧动作库">
+        <span class="caps">动作库</span>
+      </button>
+      <div class="ws-left-body" id="ws-left-body">
+        <form class="search" id="search-form" role="search">
+          <input id="search-q" type="search" placeholder="搜索动作描述或编号 (/)" maxlength="200" aria-label="搜索动作描述或动作编号">
+        </form>
+        <div class="lib-scope-row">
+          <div class="seg small" role="group" aria-label="素材范围">
+            <button type="button" id="lib-scope-all" aria-pressed="true">全部</button>
+            <button type="button" class="chip-toggle" id="f-mine" aria-pressed="false">我的</button>
+            <button type="button" id="lib-scope-results" aria-pressed="false">编辑与新结果</button>
+          </div>
+          <button class="text-btn" id="downloads-open" type="button">批量导出</button>
+        </div>
+        <div class="filters" id="lib-filters">
+          <select id="f-topic" aria-label="主题"><option value="">全部主题</option></select>
+          <select id="f-status" aria-label="全部状态"><option value="">全部状态</option><optgroup label="方向语义"><option value="direction_pass">基础方向通过</option><option value="direction_fail">方向不符</option><option value="direction_review">待审核</option><option value="direction_not_checked">未检查</option></optgroup><optgroup label="人工审核"><option value="accepted">已通过</option><option value="pending">未审核</option><option value="uncertain">不确定</option><option value="rejected">未通过</option></optgroup></select>
+        </div>
+        <div class="list-bar">
+          <span class="list-count mono" id="list-count" aria-live="polite"></span>
+          <select id="f-sort" aria-label="排序">
+            <option value="relevance">最相关</option>
+            <option value="duration_desc">时长从长到短</option>
+            <option value="duration_asc">时长从短到长</option>
+            <option value="created_desc">制作时间从晚到早</option>
+            <option value="created_asc">制作时间从早到晚</option>
+          </select>
+          <select id="f-results-sort" aria-label="结果排序" hidden>
+            <option value="created_desc">制作时间从晚到早</option>
+            <option value="created_asc">制作时间从早到晚</option>
+          </select>
+        </div>
+        <div class="motion-list" id="motion-list" role="listbox" aria-label="动作列表"></div>
+        <p class="form-error" id="list-page-error" role="status" hidden></p>
+        <button class="btn ghost block" id="list-retry" type="button" hidden>重新加载</button>
+        <button class="btn ghost block" id="list-more" type="button" hidden>更多</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: ON-DEMAND TABS + STAGES -->
+    <section class="ws-center" id="ws-center" aria-label="中央工作区">
+      <div class="ws-tabbar" id="ws-tabbar">
+        <button class="ws-tab pinned" id="tab-preview" type="button" role="tab" aria-selected="true" data-tab="preview" title="返回动作库选中素材预览 (Ctrl/Cmd+1)">
+          <span>素材预览</span>
+          <small class="mono muted" id="tab-preview-sub"></small>
+        </button>
+        <div class="ws-tabs" id="ws-tabs" role="tablist" aria-label="功能标签页"></div>
+        <span class="fill"></span>
+        <div class="ws-tab-new" role="group" aria-label="新建功能标签页">
+          <button class="text-btn" id="tab-new-generate" type="button" title="新开一个动作生成标签页">＋生成</button>
+          <button class="text-btn" id="tab-new-editor" type="button" title="新开一个编辑与拼接标签页">＋编辑/拼接</button>
+          <button class="text-btn" id="tab-new-retarget" type="button" title="新开一个重定向标签页">＋重定向</button>
+        </div>
+      </div>
+
+      <!-- Contextual Source Binding & Library Selection Bridge -->
+      <div class="ws-source-bar" id="ws-source-bar" hidden>
+        <div class="ws-source-current" id="ws-source-current"></div>
+        <div class="ws-bridge-actions" id="ws-bridge-actions"></div>
+      </div>
+
+      <div class="ws-stages" id="ws-stages">
+        <section class="ws-stage personal-assets" id="personal-assets" data-stage="assets" hidden aria-label="我的资产"></section>
+        <!-- STAGE 1: LIBRARY PREVIEW (Initial & Return View) -->
+        <section class="ws-stage view library" id="stage-preview" data-view="library" data-stage="preview">
+          <div class="stage">
+            <div class="viewport" id="viewport">
+              <div class="stage-tools">
+                <button class="text-btn" id="motion-collect" type="button">加入集合</button>
+                <button class="text-btn" id="motion-download" type="button" disabled>下载</button>
+                <span class="tool-rule" aria-hidden="true"></span>
+                <button class="text-btn" id="tool-follow" aria-pressed="true">跟随</button>
+                <button class="text-btn" id="tool-trail" aria-pressed="true">轨迹</button>
+                <button class="text-btn" id="tool-reset">重置</button>
+              </div>
+              <canvas id="motion-canvas" aria-label="动作骨架三维预览，拖动旋转，滚轮缩放"></canvas>
+              <div class="legend" aria-hidden="true"><span class="lg l">L</span><span class="lg r">R</span></div>
+              <div class="viewport-msg" id="viewport-msg">
+                <p>在左侧动作库选择素材预览，或新建一个动作</p>
+                <div class="row center" id="preview-empty-actions">
+                  <button class="btn subtle sm" id="preview-empty-gen" type="button">新建动作生成</button>
+                  <button class="btn subtle sm" id="preview-empty-scene" type="button" hidden>新建场景交互</button>
+                </div>
+                <div class="row center" id="preview-error-actions" hidden>
+                  <button class="btn subtle sm" id="preview-retry" type="button">重试加载</button>
+                </div>
+              </div>
+            </div>
+            <div class="transport" id="transport">
+              <button class="play-btn" id="play" aria-label="播放" disabled><svg><use href="#i-play"/></svg></button>
+              <span class="time mono" id="time">0.00 / 0.00 s</span>
+              <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="时间轴" disabled>
+              <select id="speed" aria-label="播放速度"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+              <button class="text-btn" id="loop" aria-pressed="true">循环</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- STAGE 2: GENERATE (Text & Inline Scene + Candidates + Bottom Serif Composer) -->
+        <section class="ws-stage view generate" id="stage-generate" data-view="generate" data-stage="generate" hidden>
+          <div class="gen-stage-layout">
+            <div class="gen-mismatch-bar" id="gen-scene-mismatch" hidden>
+              <span id="gen-mismatch-text">场景配置已修改，当前画面显示的是上一版配置生成的候选结果。</span>
+              <div class="row">
+                <button type="button" class="btn sm subtle" id="gen-back-draft">预览新场景草稿</button>
+                <button type="button" class="text-btn" id="gen-restore-spec">恢复该候选的场景配置</button>
+              </div>
+            </div>
+
+            <div class="viewport gen-viewport" id="gen-viewport">
+              <div class="stage-tools">
+                <span class="caps muted" id="gen-viewport-mode-label">候选预览</span>
+                <span class="muted small" id="gen-preview-loading" role="status" hidden>正在加载候选预览…</span>
+                <span class="tool-rule" aria-hidden="true"></span>
+                <button class="text-btn" id="gen-view-reset" type="button">重置视角</button>
+              </div>
+              <canvas id="scene-view" aria-label="生成与场景三维预览，可拖动旋转和滚轮缩放"></canvas>
+              <div class="legend" aria-hidden="true"><span class="lg l">L</span><span class="lg r">R</span></div>
+              <p id="scene-empty" class="ed-empty">在下方输入动作描述、上传动作视频，或在右侧布置交互场景物体</p>
+            </div>
+
+            <section id="scene-result" class="transport gen-transport" aria-label="生成结果播放" hidden>
+              <button class="play-btn" id="scene-play" type="button" aria-label="播放"><svg><use href="#i-play"/></svg></button>
+              <span class="time mono" id="gen-cand-clock">0.00 s</span>
+              <input type="range" id="scene-scrub" class="fill" min="0" value="0" step="1" aria-label="场景播放帧">
+              <p id="scene-quality" class="muted small"></p>
+            </section>
+            <div id="scene-markers" class="gen-markers row wrap"></div>
+
+            <!-- Multi-candidate strip inside active Generate tab -->
+            <div class="gen-candidates-strip" id="gen-candidates-strip" hidden>
+              <div class="gen-strip-head">
+                <span class="caps" id="gen-strip-title">候选结果</span>
+                <span class="muted mono" id="gen-strip-meta"></span>
+              </div>
+              <div class="gen-strip-items" id="gen-strip-items" role="list"></div>
+            </div>
+
+            <!-- Multi-Robot Actor Tracks (1–4 actors) -->
+            <div class="actor-tracks-bar" id="actor-tracks-bar" aria-label="多角色轨道">
+              <div class="actor-tracks-head">
+                <span class="caps">角色轨道</span>
+                <span class="muted small" id="actor-tracks-hint">拖动画布 R1–R4 或设置起点、朝向与每轨输入方式</span>
+                <span class="fill"></span>
+                <button type="button" class="btn sm subtle" id="actor-track-add">＋ 新增机器人轨道</button>
+              </div>
+              <div class="actor-tracks-list" id="actor-tracks-list" role="list"></div>
+            </div>
+
+            <!-- Unified Peer [文本指令 | 动作视频] Composer -->
+            <form class="composer ws-composer" id="composer">
+              <div class="composer-modality-bar">
+                <div class="seg" role="tablist" aria-label="动作生成输入模态">
+                  <button type="button" role="tab" id="gen-modality-text" aria-selected="true">文本指令</button>
+                  <button type="button" role="tab" id="gen-modality-video" aria-selected="false">动作视频</button>
+                </div>
+                <div class="composer-auto-bar" id="gen-auto-bar" hidden>
+                  <span class="pill info" id="gen-auto-badge">已按场景步骤生成英文描述 · 可手动修改</span>
+                  <button class="text-btn" id="gen-reset-auto-prompt" type="button">恢复自动描述</button>
+                  <button class="text-btn" id="gen-switch-manual" type="button" hidden>切换手动编写</button>
+                </div>
+                <span class="fill"></span>
+                <div class="composer-attach" id="gen-attach-wrap">
+                  <label class="attach-field">
+                    <span class="caps">物体响应绑定</span>
+                    <select id="gen-attach-object" aria-label="物体响应绑定">
+                      <option value="">不绑定物体</option>
+                    </select>
+                  </label>
+                  <select id="gen-attach-mode" aria-label="抓取窗口模式" hidden>
+                    <option value="auto">自动检测抓取</option>
+                    <option value="manual">手动起止秒</option>
+                  </select>
+                  <span class="attach-window" id="gen-attach-window" hidden>
+                    <input id="gen-attach-start" type="number" min="0" step="0.1" placeholder="起 s" aria-label="抓取开始秒数">
+                    <em>–</em>
+                    <input id="gen-attach-end" type="number" min="0.1" step="0.1" placeholder="止 s" aria-label="抓取结束秒数">
+                  </span>
+                </div>
+              </div>
+
+              <div id="gen-text-pane">
+                <textarea id="gen-text" rows="2" maxlength="2000" placeholder="描述一个单人动作（支持中文改写或以 A person 开头的英文直传）" aria-label="动作描述"></textarea>
+              </div>
+
+              <div id="gen-video-pane" class="video-pane" hidden>
+                <div class="video-drop-row" id="video-drop-zone">
+                  <label class="video-file-label">
+                    <input type="file" id="video-motion-file" accept="video/*">
+                  </label>
+                  <span class="muted small" id="video-drop-hint">拖放或选择单人动作视频（≤ 120s，32 MiB）</span>
+                  <span class="fill"></span>
+                  <button type="button" class="text-btn" id="video-motion-refresh">刷新记录</button>
+                  <button type="button" class="btn sm subtle" id="video-motion-start" hidden>提取动作</button>
+                </div>
+                <p id="video-motion-status" class="small muted" role="status"></p>
+                <div id="video-motion-jobs" class="video-jobs-list"></div>
+              </div>
+
+              <div class="composer-bar">
+                <select id="gen-model" class="mini" aria-label="提示词改写"></select>
+                <label class="mini-field" id="gen-duration-wrap"><span class="stepper"><button type="button" data-step="-1" aria-label="减少时长">−</button><input id="gen-duration" type="number" min="1" value="8" aria-label="每个动作时长（秒）"><button type="button" data-step="1" aria-label="增加时长">+</button></span><em>s</em></label>
+                <label class="mini-field" id="gen-count-wrap"><em>×</em><input id="gen-count" class="num" type="number" min="1" max="10000" value="2" aria-label="候选数量"></label>
+                <span class="composer-fill"></span>
+                <button class="btn primary" id="gen-submit" type="submit">生成</button>
+                <button class="btn primary" id="gen-scene-submit-proxy" type="button" hidden>生成场景动作</button>
+              </div>
+              <p class="muted duration-hint" id="gen-duration-hint">时长范围由云端模型决定</p>
+              <ul class="checks inline" id="gen-checks" aria-live="polite"></ul>
+              <p class="composer-note" id="gen-note" role="status"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- STAGE 3: EDITOR & SPLICE (Monitor + Timeline) -->
+        <section class="ws-stage view editor" id="stage-editor" data-view="editor" data-stage="editor" data-mode="sequence" hidden>
+          <section class="pane ed-monitor" aria-label="仿真监视器">
+            <div class="row ed-monitor-bar"><span class="caps" id="monitor-title">监视器 · 序列</span><span class="job-state" id="seq-job-state" role="status" aria-live="polite"></span><span class="fill"></span>
+              <div class="seg" id="seq-sources" role="group" aria-label="监视器内容" hidden><button type="button" class="text-btn" id="seq-show-sequence" aria-pressed="true">时间线序列</button><button type="button" class="text-btn" id="seq-show-result" aria-pressed="false">拼接结果</button></div>
+              <div class="seg" id="seq-modes" role="group" aria-label="监视器视角"><button type="button" class="text-btn" id="seq-mode-3d" aria-pressed="true">透视</button><button type="button" class="text-btn" id="seq-mode-plan" aria-pressed="false">俯视 · 编辑轨迹</button></div>
+              <button type="button" class="text-btn" id="seq-fit">适合</button></div>
+            <div class="ed-screen" id="seq-screen">
+              <canvas id="seq-view" aria-label="序列三维预览：拖动旋转视角"></canvas>
+              <canvas id="seq-plan" tabindex="0" aria-label="俯视轨迹：拖动轨迹移动素材，拖动圆环手柄旋转，方向键平移，方括号旋转，Shift 加大步长" hidden></canvas>
+              <span class="ed-badge" id="seq-badge" hidden>过渡占位 · 尚未生成</span>
+              <div class="ed-result-bar" id="seq-result-bar" hidden>
+                <span id="seq-result-label">Kimodo 拼接结果</span>
+                <button type="button" class="btn subtle" id="seq-result-retarget">重定向此结果</button>
+                <button type="button" class="btn subtle" id="seq-result-download">下载此结果</button>
+                <button type="button" class="btn subtle" id="seq-result-back">返回时间线预览</button>
+              </div>
+              <p class="ed-empty" id="seq-empty">从左侧动作库拖入或点击“加入素材箱”，在下方排布拼接序列</p>
+              <p class="ed-hint" id="seq-hint" hidden>拖动轨迹平移 · 拖动圆形手柄旋转（Shift 吸附 15°）· 触控板双指旋转 · Shift+滚轮旋转 · 滚轮缩放 · 拖空白平移视图</p>
+            </div>
+            <div class="row ed-transport" id="seq-transport"><button class="play-btn" type="button" id="seq-play" aria-label="播放或暂停序列"><svg><use href="#i-play"/></svg></button><output class="mono" id="seq-clock">00:00.00 / 00:00.00</output></div>
+            <div class="ed-screen editor-compare" id="repair-screen" hidden>
+              <article><h3>原动作 <span class="mono muted" id="repair-orig-label"></span></h3><div class="compare-screen"><canvas id="edit-original"></canvas><p class="ed-empty" id="edit-original-empty">载入原动作后在这里预览</p></div></article>
+              <article><h3>修正候选 <span class="mono muted" id="repair-cand-label"></span></h3><div class="compare-screen"><canvas id="edit-candidate"></canvas><p class="ed-empty" id="edit-candidate-empty">在右侧候选中点击“对比预览”</p></div></article>
+            </div>
+            <div class="row ed-transport" id="repair-transport" hidden><button class="text-btn" id="edit-save-personal-pose" type="button">保存姿态</button><button class="text-btn" id="edit-apply-personal-pose" type="button">插入姿态</button><button class="play-btn" type="button" id="edit-play" aria-label="播放或暂停对比"><svg><use href="#i-play"/></svg></button><input id="edit-scrub" aria-label="对比播放位置" type="range" min="0" max="0" value="0" class="fill"></div>
+          </section>
+
+          <section class="ed-bottom">
+            <section class="seq-timeline" id="seq-timeline" aria-label="拼接时间线">
+              <div class="row edit-timeline-toolbar"><span class="caps">拼接序列</span><output class="mono fill" id="seq-length"></output><span class="muted" id="seq-tip">点击片段选中 · 拖动两端裁剪 · 点击刻度定位</span></div>
+              <div id="seq-ruler" aria-label="时间刻度"></div>
+              <div id="seq-track" tabindex="-1" aria-label="序列轨道"><span id="seq-track-empty">把素材从左侧动作库或右侧素材箱拖到这里</span><div id="seq-blocks"></div><div id="seq-playhead" hidden></div></div>
+            </section>
+            <section class="edit-timeline" id="repair-timeline" aria-label="动作剪辑时间轴" hidden>
+              <div class="row edit-timeline-toolbar"><span class="caps">动作轨道</span><output class="mono fill" id="edit-clock">00:00.00</output><span class="zoom"><button class="text-btn" id="edit-zoom-out" type="button" aria-label="缩小时间轴">−</button><span class="mono" id="edit-zoom-label">1×</span><button class="text-btn" id="edit-zoom-in" type="button" aria-label="放大时间轴">＋</button></span><button class="text-btn" id="edit-zoom-fit" type="button">适合窗口</button></div>
+              <div id="edit-track-scroll"><div id="edit-track-stage"><div id="edit-ruler" aria-label="时间刻度"></div>
+                <div id="edit-track" tabindex="0" aria-label="动作轨道：拖动创建选区，左右键定位，I 和 O 标记入点出点">
+                  <div id="edit-filmstrip"></div><span id="edit-track-empty">载入动作后，拖动轨道选择修正片段</span>
+                  <div id="edit-selection" tabindex="0" role="group" aria-label="修正选区：拖动整体移动，左右键微调" hidden><span class="edit-selection-caption">修正片段</span><div id="edit-trim-start" role="slider" tabindex="0" aria-label="选区入点" aria-orientation="horizontal"></div><div id="edit-trim-end" role="slider" tabindex="0" aria-label="选区出点（不含）" aria-orientation="horizontal"></div></div>
+                  <div id="edit-playhead" role="slider" tabindex="0" aria-label="播放头" aria-orientation="horizontal" hidden></div>
+                </div></div></div>
+              <div class="row edit-range-tools"><button class="text-btn" id="edit-mark-in" type="button">设为入点 I</button><button class="text-btn" id="edit-mark-out" type="button">设为出点 O</button><span class="muted">拖动轨道划选 · 拖动两端裁剪 · 拖动选区整体移动 · 方向键逐帧微调</span><output id="edit-range-label" class="mono fill" aria-live="polite"></output></div>
+            </section>
+          </section>
+        </section>
+
+        <!-- STAGE 4: RETARGET (Switchable & Side-by-Side Synchronized Comparison) -->
+        <section class="ws-stage view retarget" id="stage-retarget" data-view="retarget" data-stage="retarget" data-rt-mode="robot" hidden>
+          <div class="stage rt-stage-wrap">
+            <div class="rt-stage-toolbar">
+              <div class="seg" id="rt-view-modes" role="group" aria-label="重定向预览视图">
+                <button type="button" class="text-btn" id="rt-mode-robot" aria-pressed="true">机器人动作</button>
+                <button type="button" class="text-btn" id="rt-mode-human" aria-pressed="false">源人体动作</button>
+                <button type="button" class="text-btn" id="rt-mode-compare" aria-pressed="false">并排对比</button>
+              </div>
+              <span class="fill"></span>
+              <div class="rt-acceptance-inline" id="rt-acceptance-bar" hidden></div>
+              <button class="text-btn" id="rt-reset" type="button">重置视角</button>
+            </div>
+
+            <div class="rt-viewports" id="rt-viewports">
+              <article class="rt-vp-pane" id="rt-human-pane" hidden>
+                <header class="rt-vp-head"><span>源人体动作</span><span class="mono muted" id="rt-human-caption"></span></header>
+                <div class="viewport" id="rt-human-viewport">
+                  <canvas id="rt-human-canvas" aria-label="重定向源人体动作三维预览"></canvas>
+                  <div class="legend" aria-hidden="true"><span class="lg l">L</span><span class="lg r">R</span></div>
+                  <div class="viewport-msg" id="rt-human-msg">
+                    <p>选择源动作后在此预览</p>
+                    <div class="row center" id="rt-human-retry-actions" hidden>
+                      <button class="btn subtle sm" id="rt-human-retry" type="button">重试加载</button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="rt-vp-pane" id="rt-robot-pane">
+                <header class="rt-vp-head" id="rt-robot-head" hidden><span>机器人重定向结果</span><span class="mono muted" id="rt-robot-caption"></span></header>
+                <div class="viewport" id="rt-viewport">
+                  <canvas id="robot-canvas" aria-label="重定向结果机器人三维预览，拖动旋转，滚轮缩放"></canvas>
+                  <div class="viewport-msg" id="rt-msg">
+                    <p>提交重定向任务或点击右侧已完成任务播放</p>
+                    <div class="row center" id="rt-robot-retry-actions" hidden>
+                      <button class="btn subtle sm" id="rt-robot-retry" type="button">重试加载</button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="transport" id="rt-transport">
+              <button class="play-btn" id="rt-play" aria-label="播放" disabled><svg><use href="#i-play"/></svg></button>
+              <span class="time mono" id="rt-time">0.00 / 0.00 s</span>
+              <input type="range" id="rt-scrub" min="0" max="0" value="0" step="1" aria-label="重定向时间轴" disabled>
+              <select id="rt-speed" aria-label="播放速度"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+              <button class="text-btn" id="rt-loop" type="button" aria-pressed="true">循环</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- RIGHT: CONTEXTUAL PARAMETERS & INSPECTOR -->
+    <aside class="pane ws-right" id="ws-right" aria-label="右侧参数区">
+      <button class="ws-rail" id="ws-right-rail" type="button" hidden aria-label="展开右侧参数区">
+        <span class="caps">参数</span>
+      </button>
+      <div class="ws-right-body" id="ws-right-body">
+        <!-- PARAM 1: PREVIEW INSPECTOR -->
+        <div class="ws-param inspector" id="param-preview" data-param="preview">
+          <div id="inspector"></div>
+        </div>
+
+        <!-- PARAM 2: GENERATE & OPTIONAL SCENE PARAMETERS -->
+        <div class="ws-param" id="param-generate" data-param="generate" hidden>
+          <div class="ed-tabs" role="tablist" aria-label="生成类型" hidden>
+            <button type="button" role="tab" id="gen-mode-text" aria-selected="true">文本动作</button>
+            <button type="button" role="tab" id="gen-mode-scene" aria-selected="false">场景交互</button>
+          </div>
+          <button class="btn sm subtle" id="scene-open" type="button" hidden>新建场景</button>
+          <p class="muted small" id="gen-quota"></p>
+
+          <!-- Optional Inline Scene Editor (unified, no duplicate submit or nested details) -->
+          <div id="scene-editor" class="scene-inline-panel">
+            <form id="scene-form">
+              <div class="ed-head">
+                <span class="caps" id="scene-title">布置交互场景（可选）</span>
+                <div class="row">
+                  <button type="button" id="line-open" class="text-btn">协作回放</button>
+                  <button type="button" id="scene-new" class="text-btn">清空场景</button>
+                  <button type="button" id="scene-close" class="text-btn" hidden>关闭</button>
+                </div>
+              </div>
+              <p id="scene-capability" class="muted small" role="status"></p>
+              <div class="scene-tools">
+                <select id="scene-pair" hidden>
+                  <option value="">单人场景</option><option value="handshake">双人握手</option>
+                  <option value="carry_box">双人合力搬箱</option>
+                </select>
+                <div class="row wrap" role="group" aria-label="添加物体">
+                  <button type="button" id="scene-add-point" class="btn sm subtle">＋ 目标点</button>
+                  <button type="button" id="scene-pick-personal" class="btn sm subtle">从我的资产添加</button>
+                  <button type="button" id="scene-add-box" class="btn sm subtle">＋ 箱子</button>
+                  <button type="button" id="scene-add-stairs" class="btn sm subtle">＋ 楼梯</button>
+                  <button type="button" id="scene-add-chair" class="btn sm subtle">＋ 椅子</button>
+                  <button type="button" id="scene-add-handshake" class="btn sm subtle" hidden>＋ 添加双人握手</button>
+                </div>
+                <div id="scene-peer-interactions" class="scene-peer-list" hidden></div>
+                <p id="scene-limit" class="muted small" role="status" hidden>这个场景已接近物体容量上限。</p>
+                <p class="muted small">拖动预览中的编号可移动物体与角色起点，也可编辑尺寸与坐标；点击“加入步骤”分配给当前角色轨道，或在下方“物体响应绑定”中与文本/视频联动。</p>
+                <ul id="scene-objects" class="scene-objects" aria-label="选择交互物体"></ul>
+                <p id="scene-action" class="scene-action" aria-live="polite" hidden></p>
+                <label class="field" id="scene-duration-wrap" hidden><span>场景动作时长（秒）</span><input id="scene-duration" type="number" min="3" max="120" value="4" required></label>
+              </div>
+              <div id="scene-advanced" hidden>
+                <input id="scene-manual" type="checkbox">
+                <div id="scene-manual-fields" hidden>
+                  <textarea id="scene-text" rows="2" maxlength="2000" placeholder="A person …" disabled></textarea>
+                  <textarea id="scene-spec" class="mono" rows="5" maxlength="90000" disabled></textarea>
+                </div>
+              </div>
+              <div class="row wrap">
+                <button type="submit" id="scene-submit" hidden disabled>生成场景动作</button>
+                <button type="button" id="scene-refresh" class="text-btn" disabled>刷新场景状态</button>
+              </div>
+              <p id="scene-status" class="small muted" role="status"></p>
+            </form>
+          </div>
+
+          <!-- Active & Recent Generation Tasks -->
+          <div class="ed-head section">
+            <span class="caps">生成任务</span>
+            <div class="seg small" role="group" aria-label="任务范围">
+              <button type="button" id="gen-live" aria-pressed="true">进行中</button>
+              <button type="button" id="gen-history" aria-pressed="false">历史</button>
+            </div>
+          </div>
+          <p class="form-error" id="gen-list-error" role="status" hidden></p>
+          <div class="feed compact-feed" id="gen-feed" aria-live="polite"></div>
+          <button class="btn ghost block" id="gen-more" type="button" hidden>更多</button>
+        </div>
+
+        <!-- PARAM 3: EDITOR & SPLICE PARAMETERS -->
+        <div class="ws-param ed-side" id="param-editor" data-param="editor" hidden>
+          <div class="ed-tabs" role="tablist" aria-label="编辑模式">
+            <button type="button" role="tab" id="ed-tab-sequence" aria-selected="true" aria-controls="ed-panel-sequence">素材与拼接</button>
+            <button type="button" role="tab" id="ed-tab-repair" aria-selected="false" aria-controls="ed-panel-repair">片段修正</button>
+          </div>
+          <div id="ed-panel-sequence" role="tabpanel" aria-labelledby="ed-tab-sequence">
+            <div id="seq-restore" hidden>
+              <p class="form-error" id="seq-restore-message" role="status">部分素材暂时无法读取。拼接草稿已保留，重新加载后可继续编辑。</p>
+              <button class="btn sm subtle" id="seq-retry-restore" type="button">重新加载素材</button>
+              <button class="btn sm subtle" id="seq-skip-restore-source" type="button" hidden>从素材箱移除此素材</button>
+            </div>
+            <form class="row bin-import" id="bin-form"><input id="bin-source" class="fill mono" placeholder="动作编号（m… 或 ma_…）" aria-label="导入素材的动作编号" maxlength="80"><button class="btn subtle" id="bin-load">导入</button></form>
+            <div class="link-row"><button class="text-btn" type="button" id="bin-current">＋ 加入动作库选中项</button><button type="button" class="text-btn" id="splice-results-open">拼接与修正结果导出</button></div>
+            <div class="ed-head"><span class="caps">素材箱</span><span class="muted mono" id="bin-count"></span></div>
+            <div id="bin-list" role="list" aria-label="素材箱"></div>
+            <p class="muted" id="bin-empty">从左侧动作库点击“加入素材箱”或直接拖入下方时间线。时间线最多两段。</p>
+            <div id="seq-inspector" aria-live="polite"></div>
+            <div id="splice-job" aria-live="polite"></div>
+            <p id="seq-notice" role="status" aria-live="polite"></p>
+            <button class="btn sm subtle" id="seq-result-retry" type="button" hidden>重新加载结果</button>
+          </div>
+          <div id="ed-panel-repair" role="tabpanel" aria-labelledby="ed-tab-repair" hidden>
+            <div class="ed-state-row" id="repair-state-banner"></div>
+            <p class="muted ed-lede">载入源动作，在中央时间轴划选 12–300 帧片段，填写修改描述并对比候选版本。</p>
+            <form id="edit-form">
+              <div class="row bin-import"><label class="field fill"><span>源动作编号</span><input id="edit-source" class="mono" required maxlength="80"></label><button class="btn subtle" type="button" id="edit-load">载入</button></div>
+              <div class="link-row"><button class="text-btn" type="button" id="edit-current">使用动作库选中项</button></div>
+              <details class="advanced edit-precision"><summary>按帧精确输入</summary><div class="insp-grid"><label class="field"><span>起始帧</span><input id="edit-start" type="number" min="0" step="1" value="0" required></label><label class="field"><span>结束帧（不含）</span><input id="edit-end" type="number" min="1" step="1" required></label></div></details>
+              <label class="field"><span>修改描述</span><textarea id="edit-prompt" rows="3" minlength="3" maxlength="2000" required placeholder="描述这段动作需要怎样修改"></textarea></label>
+              <label class="field"><span>提示词处理</span><select id="edit-model"><option value="exact_english">英文原文直传</option></select></label>
+              <button class="btn primary block" id="edit-submit" disabled>提交修正</button>
+            </form>
+            <p id="edit-notice" role="status" aria-live="polite"></p>
+            <button class="btn sm subtle" id="edit-preview-retry" type="button" hidden>重新加载预览</button>
+            <div id="edit-pending" class="row wrap" hidden></div>
+            <div id="edit-seam-markers" hidden>
+              <div id="edit-source-markers" class="row wrap" hidden></div>
+              <div id="edit-candidate-markers" class="row wrap" hidden></div>
+            </div>
+            <div id="edit-result" aria-live="polite"></div>
+            <div class="ed-head section"><span class="caps">修正任务记录</span><button class="text-btn" type="button" id="edit-refresh">刷新</button></div>
+            <div id="edit-tasks" role="list" aria-label="修正任务"></div>
+            <p class="muted ed-foot">每次修正产生独立版本，原动作始终保留。候选版本可直接送入机器人重定向。</p>
+          </div>
+        </div>
+
+        <!-- PARAM 4: RETARGET PARAMETERS -->
+        <div class="ws-param rt-pane" id="param-retarget" data-param="retarget" hidden>
+          <form class="rt-form" id="rt-form">
+            <div class="ed-head"><span class="caps">源动作与版本</span><button type="button" class="text-btn" id="rt-use-current">设为动作库选中项</button></div>
+            <span class="input-row field"><input id="rt-motion" class="mono" placeholder="动作 ID（m… 或 ma_…）" aria-label="源动作 ID" pattern="(m[0-9a-z]{8,}|ma_[0-9a-f]{32})" required maxlength="64"></span>
+            <p class="rt-source" id="rt-source"></p>
+            <p class="muted small" id="rt-source-lineage" hidden></p>
+            <div class="ed-head rt-robots-head"><span class="caps">目标机器人</span><button type="button" class="text-btn" id="custom-robots-open">自定义机器人</button></div>
+            <div class="robot-list field" id="robot-list" role="radiogroup" aria-label="目标机器人"></div>
+            <details class="advanced"><summary>求解参数</summary>
+              <textarea id="rt-params" class="mono" rows="3" placeholder='{"smooth_weight": 2}' aria-label="求解参数 JSON"></textarea>
+            </details>
+            <p class="form-error" id="rt-error" role="alert"></p>
+            <button class="btn primary block" id="rt-submit" type="submit">提交重定向</button>
+          </form>
+          <div class="rt-jobs-head"><span class="caps">重定向结果</span><span class="fill"></span>
+            <div class="seg small" role="group" aria-label="作业范围"><button type="button" id="rt-live" aria-pressed="true">近期</button><button type="button" id="rt-history" aria-pressed="false">历史</button></div></div>
+          <p class="form-error" id="rt-dispatch-notice" role="status" hidden></p>
+          <p class="form-error" id="rt-list-error" role="status" hidden></p>
+          <div class="rt-jobs" id="rt-jobs"></div>
+          <button class="btn ghost block" id="rt-more" type="button" hidden>更多</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- 5. BOTTOM UNIFIED TASK BAR -->
+  <footer class="ws-taskbar" id="ws-taskbar" aria-label="后台任务栏">
+    <div class="taskbar-bar">
+      <button class="taskbar-summary" id="taskbar-toggle" type="button" aria-expanded="false">
+        <span class="pill" id="taskbar-active-pill">后台空闲</span>
+        <span class="mono muted" id="taskbar-live-summary"></span>
+      </button>
+      <span class="fill"></span>
+      <div class="taskbar-completion" id="taskbar-completion" hidden>
+        <span class="pill ok" id="taskbar-completion-text"></span>
+        <button class="text-btn" id="taskbar-completion-open" type="button">查看结果</button>
+        <button class="text-btn" id="taskbar-completion-dismiss" type="button" aria-label="忽略提示">×</button>
+      </div>
+      <button class="text-btn" id="taskbar-drafts-btn" type="button" hidden></button>
+      <button class="text-btn" id="taskbar-open-btn" type="button">任务汇总 ▲</button>
+    </div>
+
+    <section class="taskbar-drawer" id="taskbar-drawer" aria-label="后台任务与草稿抽屉" hidden>
+      <header class="taskbar-drawer-head">
+        <div class="seg small" role="group" aria-label="任务筛选">
+          <button type="button" data-tb-filter="all" aria-pressed="true">全部任务</button>
+          <button type="button" data-tb-filter="active" aria-pressed="false">进行中</button>
+          <button type="button" data-tb-filter="done" aria-pressed="false">已完成</button>
+          <button type="button" data-tb-filter="drafts" aria-pressed="false">已存草稿</button>
+        </div>
+        <span class="fill"></span>
+        <button type="button" class="text-btn" id="taskbar-refresh-all">立即刷新</button>
+        <button type="button" class="text-btn" id="taskbar-close-btn">收起 ▼</button>
+      </header>
+      <div class="taskbar-list" id="taskbar-list" role="list"></div>
+    </section>
+  </footer>
+
+  <div class="banner" id="banner" role="alert" hidden><span id="banner-text">连接中断</span><button type="button" class="btn subtle" id="banner-retry">立即重试</button></div>
+</div>
+
+<!-- GADGET MODAL (Dual-Tab: Setup Config & Personal Keys) -->
+<dialog class="sheet wide" id="gadget-dialog" aria-labelledby="gadget-title">
+  <header class="sheet-head">
+    <h2 id="gadget-title">Gadget 接入</h2>
+    <button class="icon-btn" id="gadget-close" type="button" aria-label="关闭 Gadget 接入"><svg><use href="#i-x"/></svg></button>
+  </header>
+  <div class="sheet-body gadget-sheet-body">
+    <p class="muted gadget-lede">让你的 AI 工具通过个人密钥使用 Kinora。无需登录管理员网页，任务和配额归属当前账号。</p>
+
+    <div class="gadget-close-guard" id="gadget-close-guard" hidden role="alert">
+      <p>新创建的密钥仅显示这一次，尚未标记保存。离开后将无法再次查看完整密钥。</p>
+      <div class="row">
+        <button class="btn primary sm" id="gadget-guard-confirm" type="button">已妥善保存，清除并关闭</button>
+        <button class="btn subtle sm" id="gadget-guard-stay" type="button">返回复制密钥</button>
+      </div>
+    </div>
+
+    <div class="ed-tabs gadget-tabs" role="tablist" aria-label="Gadget 接入页签">
+      <button type="button" role="tab" id="gadget-tab-config" aria-selected="true" aria-controls="gadget-panel-config">接入配置</button>
+      <button type="button" role="tab" id="gadget-tab-keys" aria-selected="false" aria-controls="gadget-panel-keys">我的密钥</button>
+    </div>
+
+    <p id="gadget-notice" class="gadget-notice" role="status" aria-live="polite"></p>
+
+    <section id="gadget-panel-config" role="tabpanel" aria-labelledby="gadget-tab-config">
+      <div class="gadget-section">
+        <div class="ed-head"><span class="caps">1 · 下载接入包</span><span class="mono muted">服务器：<span id="gadget-server"></span></span></div>
+        <p class="muted small">需要 Python 3.10 或更新版本。下载后解压到固定本机目录，保留整个包。</p>
+        <div class="row gadget-dl-row">
+          <button class="btn subtle" id="gadget-download" type="button">下载 Gadget 包</button>
+          <button class="text-btn" id="gadget-goto-keys" type="button">前往“我的密钥”创建密钥 →</button>
+        </div>
+      </div>
+
+      <div class="gadget-section">
+        <div class="ed-head section"><span class="caps">2 · 生成 MCP / TOML 接入配置</span></div>
+        <p class="muted small">填写本机绝对路径。生成的配置只引用密钥文件路径，不包含密钥明文。合并到 AI 工具配置后重新连接。</p>
+        <div class="insp-grid">
+          <label class="field"><span>Gadget 解压目录</span><input id="gadget-dir" placeholder="例如 /Users/name/Kinora-Gadget"></label>
+          <label class="field"><span>密钥文本文件</span><input id="gadget-keyfile" placeholder="例如 /Users/name/.kinora/key.txt"></label>
+        </div>
+        <div class="insp-grid">
+          <label class="field"><span>结果保存目录</span><input id="gadget-output" placeholder="例如 /Users/name/Kinora-Results"></label>
+          <label class="field"><span>Python 命令或绝对路径</span><input id="gadget-python" value="python3"></label>
+        </div>
+        <div class="row gadget-cfg-bar">
+          <label class="field fill"><span>配置格式</span><select id="gadget-format"><option value="json">MCP JSON（Cursor / Claude 等）</option><option value="toml">TOML（Codex）</option></select></label>
+          <button class="btn subtle" id="gadget-config" type="button">生成配置</button>
+          <button class="btn subtle" id="gadget-config-copy" type="button">复制配置</button>
+        </div>
+        <textarea id="gadget-config-text" class="mono gadget-config-area" rows="8" readonly aria-label="接入配置"></textarea>
+        <p class="muted small">连接后先调用 motionfarm_info 检查连接；改密码、密钥过期或撤销后需重新配置新密钥。</p>
+      </div>
+    </section>
+
+    <section id="gadget-panel-keys" role="tabpanel" aria-labelledby="gadget-tab-keys" hidden>
+      <form id="gadget-form" class="gadget-section">
+        <div class="ed-head"><span class="caps">创建个人密钥</span><span class="muted small">默认只读；按需勾选写权限</span></div>
+        <div class="insp-grid">
+          <label class="field"><span>密钥名称</span><input id="gadget-name" maxlength="80" value="我的 AI 工具" required></label>
+          <label class="field"><span>有效天数（1–90）</span><input id="gadget-days" type="number" min="1" max="90" value="30" required></label>
+        </div>
+        <div class="gadget-scopes" role="group" aria-label="允许的操作">
+          <label class="check"><input type="checkbox" name="gadget-scope" value="read" checked>查询与下载</label>
+          <label class="check"><input type="checkbox" name="gadget-scope" value="generate">生成动作</label>
+          <label class="check"><input type="checkbox" name="gadget-scope" value="retarget">导入与重定向</label>
+        </div>
+        <button class="btn primary" id="gadget-create" type="submit">创建密钥</button>
+      </form>
+
+      <div id="gadget-secret-box" class="gadget-secret-box" hidden>
+        <p class="small"><strong>密钥仅显示这一次。</strong>请保存到仅本人可读的文本文件，不要粘贴到聊天或代码仓库。关闭弹窗或切换会话会清除显示。</p>
+        <input id="gadget-secret" class="mono" type="password" readonly autocomplete="off" aria-label="新密钥">
+        <div class="row">
+          <button class="btn primary sm" id="gadget-copy" type="button">复制密钥</button>
+          <button class="btn subtle sm" id="gadget-dismiss" type="button">已保存，清除显示</button>
+        </div>
+      </div>
+
+      <div class="ed-head section">
+        <span class="caps">我的密钥</span>
+        <button class="text-btn" id="gadget-refresh" type="button">刷新列表</button>
+      </div>
+      <div id="gadget-keys" class="gadget-keys-list"></div>
+    </section>
+  </div>
+</dialog>
+
+<!-- DRAFT PROTECTION DIALOG -->
+<dialog class="sheet narrow" id="draft-guard-dialog" aria-labelledby="draft-guard-title">
+  <header class="sheet-head"><h2 id="draft-guard-title">存在未保存的编辑</h2></header>
+  <div class="sheet-body">
+    <p class="muted" id="draft-guard-desc">当前标签页包含尚未提交或保存的编辑内容。请选择如何处理：</p>
+    <div class="actions">
+      <button class="btn primary block" id="draft-guard-save" type="button">保存草稿并继续</button>
+      <button class="btn subtle block" id="draft-guard-discard" type="button">放弃未保存修改</button>
+      <button class="btn ghost block" id="draft-guard-cancel" type="button">返回继续编辑</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="settings" aria-labelledby="settings-title">
+  <header class="sheet-head"><h2 id="settings-title">设置</h2><button class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-x"/></svg></button></header>
+  <div class="sheet-body">
+    <div class="set-row"><strong id="set-user">—</strong><div class="row"><button class="btn subtle" id="set-password" type="button">修改密码</button><button class="btn subtle" id="set-logout" type="button">退出登录</button></div></div>
+    <div class="set-row server-row"><span class="mono muted" data-bind="server"></span><div class="row"><button class="btn subtle" id="set-server" type="button">更改服务器</button><button class="btn subtle" id="set-reconnect" type="button">重新连接</button></div></div>
+    <div class="set-row"><span>邮箱账号</span><div class="row"><button class="btn subtle" type="button" data-account="register">申请账号</button><button class="btn subtle" type="button" data-account="forgot">重置密码</button></div></div>
+    <div class="set-row"><span>网页工作台</span><button class="btn subtle" id="set-workbench" type="button">打开</button></div>
+    <p class="form-error" id="set-workbench-error" role="alert"></p>
+    <div class="set-row"><span>v<span id="set-version"></span> <span class="muted" id="set-update" role="status" aria-live="polite"></span></span>
+      <div class="row"><button class="btn subtle" id="upd-check" type="button">检查更新</button><button class="btn primary" id="upd-download" type="button" hidden>下载更新</button><button class="btn primary" id="upd-install" type="button" hidden>重启安装</button></div></div>
+    <div class="set-row"><span>版本说明</span><button class="btn subtle" id="set-release-notes" type="button">查看本次更新</button></div>
+    <div class="set-row" id="set-installations-row" hidden><span>本机安装</span><button class="btn subtle" id="set-installations" type="button">检查 Kinora 副本</button></div>
+    <div class="set-row"><span>本机登录状态与草稿</span><button class="btn danger" id="set-clear" type="button">清除</button></div>
+    <p class="form-error" id="set-clear-error" role="alert"></p>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="installations" aria-labelledby="installations-title">
+  <header class="sheet-head"><h2 id="installations-title">本机 Kinora 安装</h2><button class="icon-btn" data-close aria-label="关闭"><svg><use href="#i-x"/></svg></button></header>
+  <div class="sheet-body">
+    <p id="installations-status" role="status"></p>
+    <ul id="installations-list" class="installations-list"></ul>
+    <p class="form-error" id="installations-error" role="alert"></p>
+    <div class="set-row"><button class="btn subtle" id="installations-refresh" type="button">重新检查</button><button class="btn primary" data-close type="button">完成</button></div>
+  </div>
+</dialog>
+
+<dialog class="sheet narrow" id="server-settings" aria-labelledby="server-title">
+  <form id="server-form">
+    <header class="sheet-head"><h2 id="server-title">连接服务器</h2><button class="icon-btn" type="button" id="server-cancel" data-close aria-label="取消"><svg><use href="#i-x"/></svg></button></header>
+    <div class="sheet-body">
+      <div class="wordmark large server-mark"><img class="brand-icon" src="assets/kinora-mark.png" alt="" draggable="false">kinora</div>
+      <p class="muted">输入你的 kinora 服务器地址，连接后使用用户名和密码登录。</p>
+      <label class="field"><span>服务器地址</span><input id="server-address" type="text" inputmode="url" autocomplete="off" spellcheck="false" required maxlength="2048" placeholder="https://kinora.example.com" aria-describedby="server-help"></label>
+      <p class="muted" id="server-help">本机可填 localhost:8765 或 127.0.0.1:8765，将 8765 换成实际服务端口。远程可填 IP:端口 或 HTTPS URL。</p>
+      <p class="form-error" id="server-error" role="alert"></p>
+      <button class="btn primary block" type="submit" id="server-save">保存并连接</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet narrow" id="release-notes" aria-labelledby="release-title">
+  <header class="sheet-head"><h2 id="release-title">本次更新</h2></header>
+  <div class="sheet-body"><ul id="release-items" class="release-items"></ul><p class="form-error" id="release-error" role="alert"></p><button class="btn primary block" id="release-dismiss" type="button">知道了</button></div>
+</dialog>
+
+<dialog class="sheet narrow" id="password" aria-labelledby="password-title">
+  <form id="password-form">
+    <header class="sheet-head"><h2 id="password-title">修改密码</h2><button class="icon-btn" type="button" data-close aria-label="关闭"><svg><use href="#i-x"/></svg></button></header>
+    <div class="sheet-body">
+      <p class="muted" id="password-reason" hidden>请先修改临时密码</p>
+      <label class="field"><span>当前密码</span><input id="pw-old" type="password" autocomplete="current-password" required></label>
+      <label class="field"><span>新密码</span><input id="pw-new" type="password" autocomplete="new-password" required></label>
+      <label class="field"><span>确认新密码</span><input id="pw-confirm" type="password" autocomplete="new-password" required></label>
+      <p class="form-error" id="pw-error" role="alert"></p>
+      <button class="btn primary block" type="submit" id="pw-submit">保存新密码</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet wide" id="downloads-dialog" aria-labelledby="downloads-title">
+  <header class="sheet-head"><h2 id="downloads-title">下载动作</h2><button class="icon-btn" type="button" id="downloads-close" aria-label="关闭"><svg><use href="#i-x"/></svg></button></header>
+  <div class="sheet-body">
+    <div class="dl-bar">
+      <div class="seg" role="group" aria-label="下载范围"><button type="button" id="downloads-library" aria-pressed="true">动作库当前列表</button><button type="button" id="downloads-results" aria-pressed="false">拼接与修正结果</button></div>
+      <span class="muted dl-scope" id="downloads-scope"></span>
+    </div>
+    <input class="dl-search" id="downloads-search" type="search" placeholder="查找描述或动作编号" aria-label="筛选下载列表">
+    <div class="dl-tools"><button class="text-btn" id="downloads-all">添加筛选结果（最多 20 个）</button><button class="text-btn" id="downloads-clear">清空选择</button><span class="fill"></span><span class="mono muted" id="downloads-count"></span></div>
+    <div id="downloads-list" class="downloads-list"></div>
+    <div class="dl-foot">
+      <label class="field fill"><span>导出格式</span><select id="downloads-format"><option value="npz">NPZ · 人体骨架源数据</option><option value="bvh">BVH · 人体骨架动画（厘米，Y 轴向上）</option></select></label>
+      <button class="btn primary" id="downloads-save">下载所选动作</button>
+    </div>
+    <p class="muted dl-note">单个动作直接保存；多选打包为 ZIP，内附逐项导出报告。BVH 不包含机器人重定向结果。</p>
+    <p class="dl-status" id="downloads-status" role="status" aria-live="polite"></p>
+    <details class="dl-failures" id="downloads-failures" hidden>
+      <summary>查看下载失败的动作</summary>
+      <ul id="downloads-failed-list"></ul>
+    </details>
+  </div>
+</dialog>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<dialog class="sheet xwide custom-robots-dialog" id="custom-robots-dialog" aria-labelledby="custom-robots-title">
+<header class="sheet-head"><h2 id="custom-robots-title">自定义机器人</h2><button class="icon-btn" type="button" id="custom-robots-close" aria-label="关闭"><svg><use href="#i-x"/></svg></button></header>
+<div class="sheet-body custom-robot-layout">
+  <div class="cr-side">
+    <p class="muted cr-lede">支持 URDF、MuJoCo XML；带网格或纹理时请将模型和资源一起打包为 ZIP（最多 32 MB）。模型保存在当前账号中。</p>
+    <label class="field"><span>模型文件</span><input type="file" id="custom-robot-file" accept=".zip,.urdf,.xml"></label>
+    <label class="field"><span>机器人名称</span><input id="custom-robot-name" maxlength="100" placeholder="例如：我的人形机器人"></label>
+    <label class="field" id="custom-robot-entry-field" hidden><span>选择模型入口</span><select id="custom-robot-entry"></select></label>
+    <button class="btn primary block" type="button" id="custom-robot-import">导入模型</button>
+    <p class="cr-status" id="custom-robot-status" role="status" aria-live="polite"></p>
+    <div class="ed-head section"><span class="caps">已导入模型</span></div>
+    <p class="cr-status" id="custom-robot-list-status" role="status"></p>
+    <button class="btn sm subtle" id="custom-robot-list-retry" type="button" hidden>重新加载模型列表</button>
+    <div id="custom-robot-list" role="list" aria-label="已导入模型"></div>
+  </div>
+  <div class="cr-main">
+    <div class="cr-screen"><canvas id="custom-robot-canvas" aria-label="自定义机器人三维预览，拖动旋转，滚轮缩放"></canvas><p class="ed-empty" id="custom-robot-empty">选择或导入模型后在这里预览</p></div>
+    <p class="cr-status" id="custom-robot-preview-status" role="status" hidden></p>
+    <div id="custom-robot-detail"></div>
+  </div>
+</div></dialog>
+<dialog class="sheet re-dialog" id="robot-editor-dialog" aria-labelledby="re-title"><article id="re-panel" class="production-panel motion-editor" hidden aria-labelledby="re-title">
+<header class="re-head"><h2 id="re-title">机器人精修与检查</h2>
+  <label class="re-version"><span>候选</span><select id="re-versions" aria-label="查看候选版本"></select></label>
+  <span class="fill"></span><p id="re-quality" class="re-quality"></p>
+  <button id="re-close" type="button" class="icon-btn" aria-label="关闭精修"><svg><use href="#i-x"/></svg></button></header>
+<div class="re-status"><p id="re-notice" class="re-notice" role="status" aria-live="polite"></p>
+  <button id="re-retry" class="btn sm subtle" type="button" hidden>重试加载</button></div>
+<div id="re-pending" class="row wrap" hidden></div>
+<div class="re-body">
+ <section class="re-stage" aria-label="预览与时间轴">
+  <div class="re-screen"><canvas id="re-canvas" tabindex="0" aria-label="机器人实体三维精修预览，空格播放或暂停，方向键切帧，拖动旋转，滚轮缩放"></canvas>
+   <div class="re-screen-tools"><label class="check"><input id="re-overlay" type="checkbox" checked>叠加原始版本</label><button id="re-camera" class="text-btn" type="button">重置视角</button></div>
+   <p id="re-draft-state" class="re-draft-state" role="status"></p></div>
+  <div class="re-transport">
+   <button id="re-prev" class="text-btn" type="button" aria-label="上一帧" title="上一帧（←）">‹</button><button id="re-play" class="btn sm primary" type="button" title="播放 / 暂停（空格）">播放</button><button id="re-next" class="text-btn" type="button" aria-label="下一帧" title="下一帧（→）">›</button>
+   <span id="re-clock" class="mono"></span><span class="fill"></span>
+   <label class="re-speed"><span>速度</span><select id="re-speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option></select></label></div>
+  <div class="re-track"><div id="re-range" class="re-range" aria-hidden="true"></div><div id="re-keyticks" class="re-keyticks" aria-hidden="true"></div><div id="re-marks" class="re-marks" aria-label="异常位置"></div>
+   <input id="re-timeline" type="range" min="0" max="0" value="0" aria-label="机器人精修时间轴"></div>
+  <p class="re-legend muted"><span class="lg-range"></span>修整选区<span class="lg-key"></span>关键帧<span class="lg-bad"></span>未通过<span class="lg-warn"></span>警告 · 点击标记跳到问题帧</p>
+  <p id="re-issue-detail" class="re-issue-detail" role="status"></p>
+  <div class="ed-head section"><span class="caps">逐帧问题</span></div>
+  <div id="re-issues" class="re-issues" aria-label="逐帧问题列表"></div>
+ </section>
+ <section class="re-side" aria-label="修整参数">
+  <div class="re-scroll">
+   <div class="re-step"><h3><i>1</i>修整选区</h3>
+    <div class="production-inputs two"><label class="field"><span>起点（包含）</span><input id="re-start" type="number" min="0" step="1" value="0"></label><label class="field"><span>终点（不包含）</span><input id="re-end" type="number" min="12" step="1"></label></div>
+    <p class="muted">12–300 帧，两端各保留 3 帧平滑衔接；选区外保持不变。</p></div>
+   <div class="re-step"><h3><i>2</i>调整关节</h3>
+    <label class="field"><span>机器人关节 · 也可点击模型选择</span><select id="re-joint"></select></label>
+    <label class="field"><span>相对原轨迹的调整（<span id="re-joint-unit">度</span>）</span><input id="re-joint-value" type="number" step="0.1" value="0"></label>
+    <input id="re-joint-slider" type="range" min="-30" max="30" step="0.1" value="0" aria-label="实时关节角调整">
+    <div class="re-row"><p id="re-angle" class="mono muted"></p><button id="re-freeze" type="button" class="text-btn">保持此关节原轨迹</button></div></div>
+   <div class="re-step"><h3><i>3</i>移动部位与根</h3>
+    <div class="production-inputs two"><label class="field"><span>手脚或其他部位</span><select id="re-body"></select></label><label class="field"><span>拖动平面</span><select id="re-plane"><option value="02">前后 / 上下</option><option value="01">前后 / 左右</option><option value="12">左右 / 上下</option></select></label></div>
+    <p class="muted">在模型上拖动金色目标点，或输入位移（米，X 前后、Y 左右、Z 上下）。求解后才成为机器人姿态。</p>
+    <div class="production-inputs"><label class="field"><span>部位 X</span><input id="re-offset-x" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label><label class="field"><span>部位 Y</span><input id="re-offset-y" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label><label class="field"><span>部位 Z</span><input id="re-offset-z" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label>
+     <label class="field"><span>根 X</span><input id="re-root-x" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label><label class="field"><span>根 Y</span><input id="re-root-y" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label><label class="field"><span>根 Z</span><input id="re-root-z" type="number" step="0.01" min="-0.5" max="0.5" value="0"></label></div>
+    <div class="re-row"><button id="re-pin" type="button" class="text-btn">固定此部位在选区起点</button></div></div>
+   <div class="re-step"><h3><i>4</i>保存关键帧</h3>
+    <p class="muted">把当前帧的调整存为关键帧（最多 16 个）；关键帧之间平滑插值。</p>
+    <button id="re-key" type="button" class="btn subtle block">保存当前帧为关键帧</button>
+    <div id="re-keys" class="re-chips" aria-label="关键帧"></div><div id="re-locks" class="re-chips" aria-label="锁定与保持"></div></div>
+  </div>
+  <footer class="re-foot">
+   <div class="re-row"><button id="re-undo" class="text-btn" type="button">撤销</button><button id="re-redo" class="text-btn" type="button">重做</button><span class="fill"></span><a class="text-btn" id="re-download" hidden download>下载已接受轨迹</a></div>
+   <div class="re-row"><button id="re-apply" class="btn primary fill" type="button">求解并检查</button><button id="re-accept" class="btn subtle" type="button">接受当前候选</button></div>
+   <div class="re-row" id="re-import-row" hidden><input id="re-import-file" type="file" accept=".npz" hidden><button id="re-import" class="btn subtle" type="button">导入修复 NPZ 并复检</button></div>
+   <p class="muted" id="re-foot-hint" aria-live="polite"></p>
+  </footer>
+ </section>
+</div></article></dialog>
+<dialog class="sheet" id="line-dialog" aria-label="协作回放">
+  <div class="sheet-head"><span class="caps">COLLABORATION / 回放</span><form method="dialog"><button class="text-btn" id="line-close" type="submit">关闭协作回放</button></form></div>
+  <iframe id="line-frame" title="协作场景播放器"></iframe>
+</dialog>
+</body>
+</html>

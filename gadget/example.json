@@ -1,0 +1,16 @@
+{
+  "workflow": "generate",
+  "prompt_mode": "exact_english",
+  "items": [
+    {
+      "id": "walk_forward",
+      "text": "A person walks slowly forward with relaxed arms and separate foot tracks throughout the motion.",
+      "n": 1,
+      "duration": 8,
+      "original_description": "缓慢向前走，手臂放松，双脚轨迹分开。"
+    }
+  ],
+  "rewrite_agent": {
+    "name": "Codex"
+  }
+}

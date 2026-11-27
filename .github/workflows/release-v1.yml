@@ -1,0 +1,189 @@
+name: Release Kinora 1.0.0 (macOS & Ubuntu)
+on:
+  workflow_dispatch:
+    inputs:
+      wheels_draft_id:
+        description: 'Optional draft release ID containing prebuilt kinora_retarget_accel-1.0.0-*.whl assets'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Build, test, and inspect all artifacts without publishing the release'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: kinora-release-v1
+  cancel-in-progress: false
+jobs:
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macos
+            artifact: macos-universal
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target universal-apple-darwin --bundles dmg
+            files: desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          - os: ubuntu-22.04
+            name: linux
+            artifact: ubuntu-x86_64
+            args: --bundles deb
+            files: desktop/src-tauri/target/release/bundle/deb/*.deb
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_BUILD_JOBS: 2
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - if: matrix.name == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: node scripts-check-release.cjs
+      - run: npm ci
+      - run: npm test
+      - run: npx tauri build ${{ matrix.args }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kinora-1.0.0-${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          retention-days: 7
+          if-no-files-found: error
+
+  package-server:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install disclosure inspection tools
+        run: bash tools/install_release_tools.sh
+      - name: Package sanitized server source ZIP
+        env:
+          KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/server-stage dist
+          cp -R g2h scripts web gadget deploy deployment data third_party commands docs \
+            requirements.txt requirements-retarget.txt assets.lock.json VERSION ROBOTS.md \
+            QUOTAS.md THIRD_PARTY_NOTICES.md LICENSE NOTICE README.md .gitignore /tmp/server-stage/
+          mkdir -p /tmp/server-stage/desktop
+          cp -R desktop/src desktop/tests desktop/package.json desktop/package-lock.json \
+            desktop/scripts-check-release.cjs desktop/README.md desktop/ACCOUNT-UPDATES.md \
+            desktop/.gitignore /tmp/server-stage/desktop/
+          python3 tools/package_server.py /tmp/server-stage dist/kinora-server-1.0.0.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kinora-1.0.0-server
+          path: dist/kinora-server-1.0.0.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    if: ${{ !inputs.dry_run && github.repository == 'PoirotJin/kinora' && github.ref == 'refs/heads/main' }}
+    needs: [build-desktop, package-server]
+    runs-on: ubuntu-24.04
+    environment: kinora-release-signing
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: '1.0.0'
+      TARGET: ${{ github.sha }}
+      WHEELS_DRAFT: ${{ inputs.wheels_draft_id }}
+      KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install disclosure inspection tools
+        run: bash tools/install_release_tools.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: kinora-1.0.0-macos-universal
+          path: raw/macos
+      - uses: actions/download-artifact@v4
+        with:
+          name: kinora-1.0.0-ubuntu-x86_64
+          path: raw/ubuntu
+      - uses: actions/download-artifact@v4
+        with:
+          name: kinora-1.0.0-server
+          path: raw/server
+      - name: Assemble and inspect release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp "$(find raw/macos -name '*.dmg' | head -n 1)" dist/kinora_1.0.0_universal.dmg
+          cp "$(find raw/ubuntu -name '*.deb' | head -n 1)" dist/kinora_1.0.0_amd64.deb
+          cp raw/server/kinora-server-1.0.0.zip dist/kinora-server-1.0.0.zip
+          if [ -n "$WHEELS_DRAFT" ]; then
+            assets=$(gh api "repos/$GH_REPO/releases/$WHEELS_DRAFT/assets?per_page=100")
+            for row in $(jq -r '.[] | select(.name | endswith(".whl")) | "\(.id)|\(.name)"' <<< "$assets"); do
+              aid=${row%%|*}
+              aname=${row#*|}
+              gh api "repos/$GH_REPO/releases/assets/$aid" -H 'Accept: application/octet-stream' > "dist/$aname"
+            done
+          fi
+          printf 'Kinora 1.0.0\n' > release-title.txt
+          cat > release-notes.txt <<'EOF'
+          ## Kinora 1.0.0 (macOS & Ubuntu)
+
+          - **Desktop Installers**: macOS Universal (Apple silicon & Intel, `.dmg`) and Ubuntu 22.04+ x86_64 (`.deb`).
+          - **Self-Hosted Server (`kinora-server-1.0.0.zip`)**: Unified motion workspace with built-in **Unitree G1 (23 DoF)** retargeting, custom URDF/MJCF robot import, Kimodo generation, editing, splicing, scene playback, and Gadget `0.9.1`.
+          - **Optional Accelerated G1 Retargeting Wheels (`kinora_retarget_accel-1.0.0-*.whl`)**: Prebuilt native runtimes for Ubuntu x86_64 (Python 3.10) and macOS arm64 (Python 3.13) with automatic fallback to the standard offline kinematic solver.
+
+          Installers are unsigned (macOS is ad-hoc signed, not Apple notarized; right-click → Open on first launch). Verify downloads against `SHA256SUMS.txt`.
+          EOF
+          python3 tools/release_gate.py dist/* release-title.txt release-notes.txt
+          (cd dist && sha256sum * | sort -k2 > SHA256SUMS.txt)
+          cat dist/SHA256SUMS.txt
+      - name: Create draft release
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="kinora-v$VERSION"
+          gh release create "$tag" dist/* --draft --target "$TARGET" \
+            --title "$(cat release-title.txt)" --notes-file release-notes.txt
+          id=""
+          for attempt in 1 2 3 4 5; do
+            if id=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp \
+              | jq -er --arg tag "$tag" --arg target "$TARGET" \
+                '[.[][] | select(.draft == true and .tag_name == $tag and .target_commitish == $target)] | select(length == 1) | .[0].id'); then
+              break
+            fi
+            sleep 3
+          done
+          [[ "$id" =~ ^[0-9]+$ ]]
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+      - name: Sign release gate record
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+          KINORA_RELEASE_RECORD_KEY: ${{ secrets.KINORA_RELEASE_RECORD_KEY }}
+        run: python3 tools/release_record.py dist "$GH_REPO" "$VERSION" "$RELEASE_ID" "$TARGET"
+      - name: Verify attachments and publish Kinora 1.0.0
+        env:
+          RELEASE_ID: ${{ steps.release.outputs.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "kinora-v$VERSION" dist/KINORA-RELEASE-GATE.json dist/KINORA-RELEASE-GATE.json.sig
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID/assets?per_page=100" > remote-assets.json
+          python3 tools/verify_release_draft.py dist remote-assets.json
+          gh api "repos/$GH_REPO/releases/$RELEASE_ID" -X PATCH -F draft=false -F prerelease=false -f make_latest=true \
+            | jq -e '.draft == false and .prerelease == false'

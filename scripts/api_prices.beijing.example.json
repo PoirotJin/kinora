@@ -1,0 +1,46 @@
+{
+  "version": "dashscope-beijing-public-2026-09-24",
+  "sources": [
+    "https://help.aliyun.com/zh/model-studio/qwen3-8-flash",
+    "https://help.aliyun.com/zh/model-studio/model-pricing"
+  ],
+  "note": "公开实时推理单价；不含优惠、税费、免费额度或显式缓存创建。历史范围按当前单价重估，不是实际账单。",
+  "prices": [
+    {
+      "provider": "",
+      "model": "qwen3.8-flash",
+      "kind": "chat",
+      "currency": "CNY",
+      "input_per_million": 0.8,
+      "cached_input_per_million": 0.1,
+      "output_per_million": 2.7
+    },
+    {
+      "provider": "",
+      "model": "text-embedding-v4",
+      "kind": "embedding",
+      "currency": "CNY",
+      "input_per_million": 0.5,
+      "cached_input_per_million": 0.5,
+      "output_per_million": 0
+    },
+    {
+      "provider": "dashscope",
+      "model": "qwen3.8-flash",
+      "kind": "chat",
+      "currency": "CNY",
+      "input_per_million": 0.8,
+      "cached_input_per_million": 0.1,
+      "output_per_million": 2.7
+    },
+    {
+      "provider": "dashscope",
+      "model": "text-embedding-v4",
+      "kind": "embedding",
+      "currency": "CNY",
+      "input_per_million": 0.5,
+      "cached_input_per_million": 0.5,
+      "output_per_million": 0
+    }
+  ]
+}

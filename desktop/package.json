@@ -1,0 +1,15 @@
+{
+  "name": "motionfarm-desktop",
+  "version": "1.0.0",
+  "description": "kinora desktop motion workspace",
+  "private": true,
+  "scripts": {
+    "dev": "tauri dev --config src-tauri/tauri.dev.conf.json",
+    "build": "npm run check:release && tauri build",
+    "test": "node tests/gadget.cjs && node tests/account.cjs && node tests/generation-duration.cjs && node tests/credentials.cjs && node tests/server-settings.cjs && node tests/session-recovery.cjs && node tests/editor.cjs && node tests/scene-editor.cjs && node tests/edit-timeline.cjs && node tests/sequence.cjs && node tests/sequence-bin.cjs && node tests/downloads.cjs && node tests/robot-editor.cjs && node tests/unified-workspace.cjs && cargo test --manifest-path src-tauri/Cargo.toml",
+    "check:release": "node scripts-check-release.cjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

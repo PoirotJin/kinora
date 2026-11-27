@@ -1,0 +1,56 @@
+@font-face { font-family: "MF Garamond"; src: url("fonts/eb-garamond-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: block; }
+@font-face { font-family: "MF Garamond"; src: url("fonts/eb-garamond-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: block; }
+:root {
+  --paper: #f3f1ec;
+  --paper-2: #ebe8e1;
+  --paper-3: #e2ded5;
+  --ink: #0b0b0b;
+  --ink-2: #57544e;
+  --ink-3: #8e8a82;
+  --rule: #d6d1c7;
+  --ok: #2e5b3c;
+  --warn: #8a6416;
+  --bad: #7d1e1e;
+  --sans: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --serif: "MF Garamond", "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+  --track: .16em;
+  color-scheme: light;
+  font: 13px/1.5 var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+header, section { padding: 14px clamp(16px, 3vw, 32px); background: var(--paper); }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--ink); }
+.brand-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.wordmark { display: inline-flex; align-items: center; font: 500 20px/1 var(--serif); letter-spacing: -.025em; padding: 2px 6px; border: 1px solid var(--ink); border-radius: 0; }
+.caps { font-size: 10.5px; letter-spacing: var(--track); text-transform: uppercase; color: var(--ink-2); }
+h1 { font: 500 20px/1.25 var(--serif); letter-spacing: -.01em; margin: 6px 0 2px; }
+p { margin: 2px 0; color: var(--ink-2); font-size: 12px; }
+.viewport { position: relative; height: calc(100vh - 240px); min-height: 280px; background: var(--paper-2); border-bottom: 1px solid var(--rule); }
+canvas, #labels { display: block; width: 100%; height: 100%; position: absolute; inset: 0; }
+canvas { touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+#labels { pointer-events: none; overflow: hidden; }
+.tag { position: absolute; transform: translate(-50%, -50%); font-weight: 500; color: var(--ink); white-space: nowrap; font-size: 11px; letter-spacing: .04em; background: rgba(243, 241, 236, .9); border: 1px solid var(--ink); border-radius: 0; padding: 2px 7px; }
+.buttons { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.buttons label, .buttons output { font-size: 12px; color: var(--ink-2); }
+.buttons label { display: flex; align-items: center; gap: 6px; }
+button, select, .file { position: relative; font: inherit; font-size: 11.5px; letter-spacing: .08em; border: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); padding: 5px 12px; cursor: pointer; transition: background .15s, color .15s; }
+button:hover, .file:hover { background: var(--ink); color: var(--paper); }
+button:disabled { opacity: .3; cursor: not-allowed; background: transparent; color: var(--ink); }
+select { border: 0; border-bottom: 1px solid var(--rule); padding: 4px 18px 4px 2px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 8px) 52%, calc(100% - 4px) 52%; background-size: 4px 4px; background-repeat: no-repeat; }
+select:hover { background-color: transparent; color: var(--ink); border-bottom-color: var(--ink); }
+.file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+:focus-visible, .file:focus-within { outline: 1px solid var(--ink); outline-offset: 2px; }
+#play { background: var(--ink); color: var(--paper); min-width: 76px; }
+#play:hover:not(:disabled) { background: #2a2a2a; }
+#clock { font-variant-numeric: tabular-nums; min-width: 56px; color: var(--ink); }
+#time { width: 100%; appearance: none; height: 22px; background: transparent; cursor: pointer; margin: 10px 0; border: 0; }
+#time::-webkit-slider-runnable-track { height: 1px; background: linear-gradient(to right, var(--ink) var(--p, 0%), var(--rule) var(--p, 0%)); }
+#time::-webkit-slider-thumb { appearance: none; width: 2px; height: 15px; background: var(--ink); margin-top: -7px; border-radius: 0; }
+#events { gap: 8px; }
+#events button { font-size: 11px; border-color: var(--rule); padding: 4px 10px; }
+#events button:hover { border-color: var(--ink); }
+#status { font-size: 12px; min-height: 1.5em; margin-top: 8px; color: var(--ink-2); }

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "motionfarm": {
+      "command": "python3",
+      "args": ["/ABSOLUTE/PATH/MotionFarm-Gadget/motionfarm_mcp.py"],
+      "env": {
+        "MOTIONFARM_URL": "https://your-kinora.example.com:8765",
+        "MOTIONFARM_API_KEY_FILE": "/ABSOLUTE/PATH/motionfarm-key.txt",
+        "MOTIONFARM_OUTPUT_DIR": "/ABSOLUTE/PATH/motionfarm-output"
+      }
+    }
+  }
+}

@@ -1,0 +1,137 @@
+"""Bounded, standard-library tests; never call an API or load a motion model."""
+import contextlib
+import io
+import json
+from pathlib import Path
+import sqlite3
+import tempfile
+import unittest
+
+import MotionFarm as farm
+from g2h.collection_store import CollectionStore, iter_committed
+
+
+class FarmTests(unittest.TestCase):
+    def item(self):
+        return {"topic_id": "walking", "text": "A person walks forward at a relaxed pace with short steps and natural arm swings.",
+                "text_zh": "一个人向前走。", "duration_s": 8, "id": "example",
+                "attributes": {"direction": "forward", "speed": "slow", "style": "ordinary"},
+                "source": {"model": "qwen3.8-flash", "run_id": "test"}}
+
+    def validate(self, items, count=1):
+        return farm.validate_prompts(json.dumps({"prompts": items}), [{"id": "walking"}], count)
+
+    def prompt(self):
+        return {k: v for k, v in self.item().items() if k in ("topic_id", "text", "attributes")}
+
+    def test_english_response_without_translation_accepted(self):
+        self.assertEqual(self.validate([self.prompt()]), [self.prompt()])
+
+    def test_chinese_or_translation_rejected(self):
+        for location in ("text", "attribute", "translation"):
+            with self.subTest(location=location):
+                item = self.prompt()
+                if location == "text":
+                    item["text"] += " 向前走。"
+                elif location == "attribute":
+                    item["attributes"]["direction"] = "向前"
+                else:
+                    item["text_zh"] = "一个人向前走。"
+                with self.assertRaises(ValueError):
+                    self.validate([item])
+
+    def test_missing_main_description_rejected(self):
+        item = self.prompt()
+        item["text"] = "A person dances."
+        with self.assertRaises(ValueError):
+            self.validate([item])
+
+    def test_english_dance_loanword_accepted(self):
+        item = self.prompt()
+        item["topic_id"] = "dancing"
+        item["text"] = "A person performs a ballet plié, bending both knees outward while keeping their torso upright."
+        item["attributes"]["style"] = "ballet"
+        result = farm.validate_prompts(json.dumps({"prompts": [item]}), [{"id": "dancing"}], 1)
+        self.assertEqual(result[0]["text"], item["text"])
+
+    def test_camera_directions_and_ambiguous_gait_rejected(self):
+        for text in (
+            "A person walks across the frame at a relaxed pace with short steps and natural arm swings.",
+            "A person walks with jogging-like steps at a relaxed pace and swings their arms naturally.",
+        ):
+            item = self.prompt()
+            item["text"] = text
+            with self.assertRaises(ValueError):
+                self.validate([item])
+
+    def test_unknown_topic_and_wrong_quota_rejected(self):
+        item = self.prompt()
+        item["topic_id"] = "running"
+        with self.assertRaises(ValueError):
+            self.validate([item])
+        with self.assertRaises(ValueError):
+            self.validate([])
+
+    def test_normalized_duplicate_rejected(self):
+        first, second = self.prompt(), self.prompt()
+        second["text"] = "A person walks  forward at a relaxed pace with short steps and natural arm swings."
+        with self.assertRaises(ValueError):
+            self.validate([first, second], 2)
+
+    def test_unsafe_topic_rejected_before_any_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "farm"
+            manifest = Path(tmp) / "manifest.json"
+            bad = self.item()
+            bad["topic_id"] = "../escape"
+            farm.save_json(manifest, {"schema_version": 1, "prompts": [self.item(), bad]})
+            with self.assertRaises(ValueError):
+                farm.enqueue_manifest(root, manifest, [42])
+            self.assertFalse(root.exists())
+
+    def test_enqueue_replay_and_provenance_survive_storage(self):
+        with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stdout(io.StringIO()):
+            root = Path(tmp) / "farm"
+            manifest = Path(tmp) / "manifest.json"
+            farm.save_json(manifest, {"schema_version": 1, "prompts": [self.item()]})
+            farm.enqueue_manifest(root, manifest, [42, 43])
+            farm.enqueue_manifest(root, manifest, [42, 43])
+            queue = root / "topics/walking"
+            with sqlite3.connect(queue / "index.sqlite3") as db:
+                rows = db.execute("SELECT id,spec FROM tasks").fetchall()
+            self.assertEqual(len(rows), 2)
+            key, raw = rows[0]
+            spec = json.loads(raw)
+            self.assertEqual(spec["farm"]["label_status"], "intended_unverified")
+            with CollectionStore(queue) as store:
+                store.append({"id": key, **spec, "motion": {"test_only": True}})
+            record = next(iter_committed(queue))
+            self.assertEqual(record["farm"]["text_zh"], "一个人向前走。")
+            self.assertEqual(record["topic"], "walking")
+            farm.enqueue_manifest(root, manifest, [42, 43])
+            with sqlite3.connect(queue / "index.sqlite3") as db:
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM tasks").fetchone()[0], 2)
+                self.assertEqual(db.execute("SELECT state FROM tasks WHERE id=?", (key,)).fetchone()[0], "done")
+
+    def test_status_does_not_create_missing_queues(self):
+        with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stdout(io.StringIO()):
+            root = Path(tmp) / "absent"
+            farm.status(root, [{"id": "walking"}])
+            self.assertFalse(root.exists())
+
+    def test_new_english_manifest_enqueues_without_chinese(self):
+        with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stdout(io.StringIO()):
+            root = Path(tmp) / "farm"
+            manifest = Path(tmp) / "manifest.json"
+            item = self.item()
+            del item["text_zh"]
+            farm.save_json(manifest, {"schema_version": 1, "prompts": [item]})
+            farm.enqueue_manifest(root, manifest, [42])
+            with sqlite3.connect(root / "topics/walking/index.sqlite3") as db:
+                spec = json.loads(db.execute("SELECT spec FROM tasks").fetchone()[0])
+            self.assertNotIn("text_zh", spec["farm"])
+            self.assertEqual(spec["text"], item["text"])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily MotionFarm backup restore verification
+[Timer]
+OnCalendar=*-*-* 06:45:00
+Persistent=true
+RandomizedDelaySec=120
+[Install]
+WantedBy=timers.target

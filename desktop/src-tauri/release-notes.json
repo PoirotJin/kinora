@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "title": "Kinora 1.0.0",
+  "items": [
+    "Unified motion workspace across generation, library search, editing, splicing, scene playback, and robot retargeting.",
+    "Built-in Unitree G1 (23 DoF) retargeting with optional prebuilt accelerated runtime and automatic fallback.",
+    "Custom robot URDF/MJCF import, 3D mesh-based editing, and Gadget CLI/MCP integration.",
+    "Desktop installers for macOS (Universal) and Ubuntu 22.04+ (x86_64)."
+  ]
+}

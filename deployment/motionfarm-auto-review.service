@@ -1,0 +1,23 @@
+[Unit]
+Description=MotionFarm bounded CPU TMR review batch
+After=motionfarm.service
+
+[Service]
+Type=oneshot
+User=jfc
+Group=jfc
+WorkingDirectory=/home/jfc/MotionFarm
+Environment=HOME=/home/jfc
+Environment=OMP_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+Environment=OPENBLAS_NUM_THREADS=2
+Environment=TOKENIZERS_PARALLELISM=false
+Environment=HF_HUB_OFFLINE=1
+ExecStart=/home/jfc/miniconda3/envs/g2h/bin/python scripts/auto_review_worker.py --root /home/jfc/MotionFarm/outputs/text_motion_farm --assets /home/jfc/MotionFarm-tmr --limit 32
+Nice=15
+CPUQuota=200%
+MemoryMax=3G
+IOSchedulingClass=idle
+TimeoutStartSec=180
+UMask=0077
+

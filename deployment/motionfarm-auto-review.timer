@@ -1,0 +1,10 @@
+[Unit]
+Description=MotionFarm periodic automatic motion scoring
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=2min
+Unit=motionfarm-auto-review.service
+
+[Install]
+WantedBy=timers.target

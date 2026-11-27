@@ -1,0 +1,12 @@
+{
+  "version": "kinora-human52-v1",
+  "origin": "Independent numerical design in g2h/human_rig.py; no downloaded or copied skeleton, mesh, skinning or texture assets.",
+  "units": "metres",
+  "axes": "Y up, +Z forward, T pose",
+  "preview": "Procedural bones and joints drawn from these coordinates; no textured body mesh.",
+  "files": {
+    "j_template.bin": "30eeddda0aaf2eb84d8f6913a2eba731fb0ff91cdcd5f42a8b8eea84f78f168a",
+    "joint_names.json": "1a116d555ee0871e2da97a55f55086a8a74bf212f7eb5afa2b04f747afc540e3",
+    "kintree.bin": "98a20fa3b53193790b63d9ac3a9c917f2f70fbe6e053dca495c75317ff4b756a"
+  }
+}

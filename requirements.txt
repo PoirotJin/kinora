@@ -1,0 +1,7 @@
+# Qwen Agent uses the Python standard library.
+# Required for restoring compacted server backups.
+zstandard
+# Robot retargeting uses scalar-first quaternion conversion in scipy.spatial.
+scipy>=1.14.0
+# Motion generation uses the retained HY-Motion backend dependencies.
+-r third_party/HY-Motion-1.0/requirements.txt

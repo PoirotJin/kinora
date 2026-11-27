@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Local UI only. The web workbench window loads a remote URL and gets no IPC access.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

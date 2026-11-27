@@ -1,0 +1,13 @@
+[Unit]
+Description=MotionFarm bounded sample restore and snapshot reference verification
+RequiresMountsFor=/home/jfc/MotionFarm-payload-backups /home/jfc/MotionFarm-db-backups
+After=local-fs.target motionfarm-payload-backup.service motionfarm-db-backup.service
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jfc/MotionFarm
+Environment=PYTHONPATH=/home/jfc/MotionFarm:/home/jfc/MotionFarm/scripts
+ExecStart=/home/jfc/miniconda3/envs/g2h/bin/python scripts/backup_verification.py --root /home/jfc/MotionFarm/outputs/text_motion_farm
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=5min
+UMask=0077

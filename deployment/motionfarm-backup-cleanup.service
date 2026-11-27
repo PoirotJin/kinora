@@ -1,0 +1,12 @@
+[Unit]
+Description=MotionFarm disposable cache and interrupted backup cleanup
+RequiresMountsFor=/home/jfc/MotionFarm-payload-backups
+After=local-fs.target motionfarm-payload-backup.service
+[Service]
+Type=oneshot
+WorkingDirectory=/home/jfc/MotionFarm
+ExecStart=/home/jfc/miniconda3/envs/g2h/bin/python scripts/backup_cleanup.py --root /home/jfc/MotionFarm/outputs/text_motion_farm --apply
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=30
+UMask=0077

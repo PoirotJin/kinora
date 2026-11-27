@@ -1,0 +1,35 @@
+[Unit]
+Description=MotionFarm low-priority direction index backfill
+After=motionfarm.service
+
+[Service]
+Type=simple
+User=jfc
+Group=jfc
+WorkingDirectory=/home/jfc/MotionFarm
+Environment=OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1
+ExecStart=/home/jfc/miniconda3/envs/g2h/bin/python -u scripts/backfill_direction.py --root /home/jfc/MotionFarm/outputs/text_motion_farm --batch-size 16 --mib-per-second 8 --follow
+Restart=on-failure
+RestartSec=30
+Nice=19
+CPUQuota=10%
+CPUWeight=1
+IOWeight=1
+IOSchedulingClass=idle
+MemoryMax=512M
+TasksMax=8
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+# SQLite mode=ro readers still need to create WAL shared-memory sidecars.
+# Source connections remain read-only in the application.
+ReadWritePaths=/home/jfc/MotionFarm/outputs/text_motion_farm
+# Bind all existing source files/directories read-only; only catalog WAL/SHM
+# sidecars and review outputs may be written. A mounted source cannot be unlinked.
+ReadOnlyPaths=/home/jfc/MotionFarm/outputs/text_motion_farm/prompts.sqlite3 /home/jfc/MotionFarm/outputs/text_motion_farm/topics /home/jfc/MotionFarm/outputs/text_motion_farm/prompts /home/jfc/MotionFarm/outputs/text_motion_farm/agent_runs /home/jfc/MotionFarm/outputs/text_motion_farm/experiments /home/jfc/MotionFarm/outputs/text_motion_farm/exports /home/jfc/MotionFarm/outputs/text_motion_farm/harness_assets /home/jfc/MotionFarm/outputs/text_motion_farm/vector_indexes
+ReadOnlyPaths=/home/jfc/MotionFarm/outputs/text_motion_farm/backup_config.json /home/jfc/MotionFarm/outputs/text_motion_farm/payload_backup_config.json /home/jfc/MotionFarm/outputs/text_motion_farm/storage_tiers.json /home/jfc/MotionFarm/outputs/text_motion_farm/gpu_worker.lock /home/jfc/MotionFarm/outputs/text_motion_farm/prompt_generation.lock /home/jfc/MotionFarm/outputs/text_motion_farm/variant_generation.lock
+PrivateTmp=yes
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

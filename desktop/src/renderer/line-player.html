@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>空调总装车间 · Kinora 协作回放</title><link rel="stylesheet" href="line-player.css"></head>
+<body>
+<header>
+  <div>
+    <div class="brand-row"><span class="wordmark">kinora</span><span class="caps">协作场景回放</span></div>
+    <h1>空调总装车间</h1>
+    <p id="summary">打开协作场景以查看回放</p>
+  </div>
+  <label class="file">导入场景<input id="import" type="file" accept=".json"></label>
+</header>
+<main><div class="viewport"><canvas id="view" aria-label="G1 车间全景"></canvas><div id="labels"></div></div>
+<section><div class="buttons"><button id="play" disabled>播放</button><output id="clock">0.0 s</output>
+<label>到料<select id="variant"><option>正常</option><option>晚到 5 秒</option><option>并排对照</option></select></label>
+<label>视角<select id="focus"><option value="all">全车间</option></select></label>
+<label>速度<select id="speed"><option>1</option><option>2</option><option>4</option></select></label></div>
+<input id="time" type="range" min="0" max="2699" step="1" value="0" aria-label="播放进度">
+<div id="events" class="buttons"></div><p id="status" aria-live="polite"></p></section></main>
+<!-- packaged-scene -->
+<script src="vendor/three.min.js"></script><script src="line-player.js"></script></body></html>

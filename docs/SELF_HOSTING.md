@@ -136,3 +136,14 @@ distilbert/  # 完整的本地 tokenizer / config / model 文件
 ```
 
 在该独立环境用 `python scripts/auto_review_worker.py --root runtime/farm --assets /absolute/path/to/tmr-assets --limit 16` 执行有界评分，再按需通过自己的服务定时器重复运行（参考 `deployment/motionfarm-auto-review.service` 与 `.timer`）。模型、统计文件与 DistilBERT 必须相互兼容；本次没有重新验收 TMR 模型安装。该分数是语义相似性，不代表动力学或真机安全。
+
+
+## Optional Accelerated Retargeting Runtime
+
+For faster `unitree_g1_23dof` retargeting on Ubuntu x86_64 or macOS arm64, install the optional prebuilt wheel from the Kinora `1.0.0` release into `.retarget-venv`:
+
+```bash
+.retarget-venv/bin/python -m pip install --no-deps kinora_retarget_accel-1.0.0-*.whl
+```
+
+When installed, Kinora automatically dispatches standard `unitree_g1_23dof` jobs through `scripts/fast_retarget_engine.py` and falls back to `scripts/retarget_engine.py` whenever custom solver parameters are requested or a candidate does not satisfy all clearance/continuity gates. Set `KINORA_DISABLE_FAST_RETARGET=1` to force the standard offline solver.
