@@ -76,8 +76,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/server-stage dist
-          cp -R g2h scripts web gadget deploy deployment data third_party commands docs \
-            requirements.txt requirements-retarget.txt assets.lock.json VERSION ROBOTS.md \
+          cp -R g2h scripts web gadget deploy deployment data third_party docs \
+            requirements.txt assets.lock.json VERSION ROBOTS.md \
             QUOTAS.md THIRD_PARTY_NOTICES.md LICENSE NOTICE README.md .gitignore /tmp/server-stage/
           mkdir -p /tmp/server-stage/desktop
           cp -R desktop/src desktop/tests desktop/package.json desktop/package-lock.json \
