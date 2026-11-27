@@ -16,17 +16,17 @@ Kinora brings motion generation, search, preview, retargeting, and refinement in
 
 ## Downloads
 
-**Kinora `1.0.0` (macOS & Ubuntu):** After installation, connect to your Kinora server and sign in. The server handles generation and retargeting.
+**Kinora `1.0.1` (macOS & Ubuntu):** After installation, connect to your Kinora server and sign in. The server handles generation and retargeting.
 
 | Download | Version | Compatibility |
 | --- | --- | --- |
-| [macOS installer (DMG)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/kinora_1.0.0_universal.dmg) | 1.0.0 | Universal, Apple silicon and Intel (macOS 11+) |
-| [Ubuntu installer (DEB)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/kinora_1.0.0_amd64.deb) | 1.0.0 | Ubuntu 22.04+ x86_64 |
-| [Server source (ZIP, includes Gadget)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/kinora-server-1.0.0.zip) | 1.0.0 | Full server and compute queue, with Gadget 0.9.1 |
+| [macOS installer (DMG)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.1/kinora_1.0.1_universal.dmg) | 1.0.1 | Universal, Apple silicon and Intel (macOS 11+) |
+| [Ubuntu installer (DEB)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.1/kinora_1.0.1_amd64.deb) | 1.0.1 | Ubuntu 22.04+ x86_64 |
+| [Server source (ZIP, includes Gadget)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.1/kinora-server-1.0.1.zip) | 1.0.1 | Full server and compute queue, with Gadget 0.9.1 |
 | [Accelerated G1 Retargeting Wheel (Ubuntu)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/kinora_retarget_accel-1.0.0-cp310-cp310-linux_x86_64.whl) | 1.0.0 | Optional prebuilt runtime, Ubuntu x86_64 Python 3.10 |
 | [Accelerated G1 Retargeting Wheel (macOS)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/kinora_retarget_accel-1.0.0-cp313-cp313-macosx_11_0_arm64.whl) | 1.0.0 | Optional prebuilt runtime, macOS arm64 Python 3.13 |
 
-[Release checksums (SHA-256)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.0/SHA256SUMS.txt) · [Installation and updates](docs/INSTALL.md) · [Versions and compatibility](docs/VERSIONS.md)
+[Release checksums (SHA-256)](https://github.com/PoirotJin/kinora/releases/download/kinora-v1.0.1/SHA256SUMS.txt) · [Installation and updates](docs/INSTALL.md) · [Versions and compatibility](docs/VERSIONS.md)
 
 ## Get started
 

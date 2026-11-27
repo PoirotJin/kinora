@@ -59,7 +59,7 @@ jobs:
       - run: npx tauri build ${{ matrix.args }}
       - uses: actions/upload-artifact@v4
         with:
-          name: kinora-1.0.0-${{ matrix.artifact }}
+          name: kinora-release-${{ matrix.artifact }}
           path: ${{ matrix.files }}
           retention-days: 7
           if-no-files-found: error
@@ -75,6 +75,7 @@ jobs:
           KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
         run: |
           set -euo pipefail
+          VER=$(tr -d ' \r\n' < VERSION)
           mkdir -p /tmp/server-stage dist
           cp -R g2h scripts web gadget deploy deployment data third_party docs \
             requirements.txt assets.lock.json VERSION ROBOTS.md \
@@ -83,11 +84,12 @@ jobs:
           cp -R desktop/src desktop/tests desktop/package.json desktop/package-lock.json \
             desktop/scripts-check-release.cjs desktop/README.md desktop/ACCOUNT-UPDATES.md \
             desktop/.gitignore /tmp/server-stage/desktop/
-          python3 tools/package_server.py /tmp/server-stage dist/kinora-server-1.0.0.zip
+          rm -rf /tmp/server-stage/desktop/src/renderer/assets
+          python3 tools/package_server.py /tmp/server-stage "dist/kinora-server-${VER}.zip"
       - uses: actions/upload-artifact@v4
         with:
-          name: kinora-1.0.0-server
-          path: dist/kinora-server-1.0.0.zip
+          name: kinora-release-server
+          path: dist/kinora-server-*.zip
           retention-days: 7
           if-no-files-found: error
 
@@ -101,7 +103,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      VERSION: '1.0.0'
       TARGET: ${{ github.sha }}
       WHEELS_DRAFT: ${{ inputs.wheels_draft_id }}
       KINORA_BLOCKED_IPS: ${{ secrets.KINORA_BLOCKED_IPS }}
@@ -113,24 +114,26 @@ jobs:
         run: bash tools/install_release_tools.sh
       - uses: actions/download-artifact@v4
         with:
-          name: kinora-1.0.0-macos-universal
+          name: kinora-release-macos-universal
           path: raw/macos
       - uses: actions/download-artifact@v4
         with:
-          name: kinora-1.0.0-ubuntu-x86_64
+          name: kinora-release-ubuntu-x86_64
           path: raw/ubuntu
       - uses: actions/download-artifact@v4
         with:
-          name: kinora-1.0.0-server
+          name: kinora-release-server
           path: raw/server
       - name: Assemble and inspect release assets
         shell: bash
         run: |
           set -euo pipefail
+          VERSION=$(tr -d ' \r\n' < VERSION)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           mkdir -p dist
-          cp "$(find raw/macos -name '*.dmg' | head -n 1)" dist/kinora_1.0.0_universal.dmg
-          cp "$(find raw/ubuntu -name '*.deb' | head -n 1)" dist/kinora_1.0.0_amd64.deb
-          cp raw/server/kinora-server-1.0.0.zip dist/kinora-server-1.0.0.zip
+          cp "$(find raw/macos -name '*.dmg' | head -n 1)" "dist/kinora_${VERSION}_universal.dmg"
+          cp "$(find raw/ubuntu -name '*.deb' | head -n 1)" "dist/kinora_${VERSION}_amd64.deb"
+          cp "$(find raw/server -name 'kinora-server-*.zip' | head -n 1)" "dist/kinora-server-${VERSION}.zip"
           if [ -n "$WHEELS_DRAFT" ]; then
             assets=$(gh api "repos/$GH_REPO/releases/$WHEELS_DRAFT/assets?per_page=100")
             for row in $(jq -r '.[] | select(.name | endswith(".whl")) | "\(.id)|\(.name)"' <<< "$assets"); do
@@ -138,16 +141,19 @@ jobs:
               aname=${row#*|}
               gh api "repos/$GH_REPO/releases/assets/$aid" -H 'Accept: application/octet-stream' > "dist/$aname"
             done
+          else
+            gh release download kinora-v1.0.0 -p 'kinora_retarget_accel-*.whl' -D dist
           fi
-          printf 'Kinora 1.0.0\n' > release-title.txt
-          cat > release-notes.txt <<'EOF'
-          ## Kinora 1.0.0 (macOS & Ubuntu)
+          printf 'Kinora %s\n' "$VERSION" > release-title.txt
+          cat > release-notes.txt <<EOF
+          ## Kinora ${VERSION} (macOS & Ubuntu)
 
-          - **Desktop Installers**: macOS Universal (Apple silicon & Intel, `.dmg`) and Ubuntu 22.04+ x86_64 (`.deb`).
-          - **Self-Hosted Server (`kinora-server-1.0.0.zip`)**: Unified motion workspace with built-in **Unitree G1 (23 DoF)** retargeting, custom URDF/MJCF robot import, Kimodo generation, editing, splicing, scene playback, and Gadget `0.9.1`.
-          - **Optional Accelerated G1 Retargeting Wheels (`kinora_retarget_accel-1.0.0-*.whl`)**: Prebuilt native runtimes for Ubuntu x86_64 (Python 3.10) and macOS arm64 (Python 3.13) with automatic fallback to the standard offline kinematic solver.
+          - **Fix**: Restored missing brand mark logo (\`kinora-mark.png\`) in the desktop login screen and workspace header.
+          - **Desktop Installers**: macOS Universal (Apple silicon & Intel, \`.dmg\`) and Ubuntu 22.04+ x86_64 (\`.deb\`).
+          - **Self-Hosted Server (\`kinora-server-${VERSION}.zip\`)**: Unified motion workspace with built-in **Unitree G1 (23 DoF)** retargeting, custom URDF/MJCF robot import, Kimodo generation, editing, splicing, scene playback, and Gadget \`0.9.1\`.
+          - **Optional Accelerated G1 Retargeting Wheels (\`kinora_retarget_accel-1.0.0-*.whl\`)**: Prebuilt native runtimes for Ubuntu x86_64 (Python 3.10) and macOS arm64 (Python 3.13) with automatic fallback to the standard offline kinematic solver.
 
-          Installers are unsigned (macOS is ad-hoc signed, not Apple notarized; right-click → Open on first launch). Verify downloads against `SHA256SUMS.txt`.
+          Installers are unsigned (macOS is ad-hoc signed, not Apple notarized; right-click → Open on first launch). Verify downloads against \`SHA256SUMS.txt\`.
           EOF
           python3 tools/release_gate.py dist/* release-title.txt release-notes.txt
           (cd dist && sha256sum * | sort -k2 > SHA256SUMS.txt)

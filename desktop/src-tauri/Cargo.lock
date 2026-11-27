@@ -2222,7 +2222,7 @@ dependencies = [
 
 [[package]]
 name = "motionfarm-desktop"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "core-foundation 0.10.1",
  "keyring",
